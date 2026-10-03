@@ -1,124 +1,88 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Warm Knots | Handmade Crochet</title>
+<title>Warm Knots</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap">
 <style>
 :root{--bg:#fbf6ef;--fg:#3a2e2a;--card:#fff;--mut:#8a7a70;--acc:#c8553d;--bd:#eadfd2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1f1a18;--fg:#f3e9df;--card:#2b2421;--mut:#b5a499;--bd:#3d322d}}
 :root[data-theme="dark"]{--bg:#1f1a18;--fg:#f3e9df;--card:#2b2421;--mut:#b5a499;--bd:#3d322d}
-html{scroll-padding-top:env(safe-area-inset-top,0px);scroll-behavior:smooth}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:Georgia,'Times New Roman',serif;line-height:1.5}
-header{display:flex;gap:14px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--bd);flex-wrap:wrap}
-header b{flex:1;font-size:22px;white-space:nowrap}header a,.lnk{color:var(--fg);text-decoration:none;font-family:system-ui,sans-serif;font-size:14px;background:none;border:0;cursor:pointer;padding:0}
+header{display:flex;gap:14px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--bd)}
+header b{flex:1;white-space:nowrap}
+.brand{font-family:'Pacifico','Brush Script MT',cursive;font-weight:400;color:var(--acc)}
+header .brand{font-size:28px}
+.sub{color:var(--mut);font-size:17px;max-width:540px;margin:6px auto 0}
 .user{display:flex;align-items:center;gap:8px;font-family:system-ui,sans-serif;font-size:14px}
 .av{width:30px;height:30px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;object-fit:cover;font-weight:600}
-section{max-width:980px;margin:0 auto;padding:30px 20px}
-.hero{text-align:center;padding-top:44px}.hero h1{font-size:clamp(30px,7vw,52px);margin:6px 0}.hero p{color:var(--mut);max-width:540px;margin:8px auto}
-.signin{background:var(--card);border:1px solid var(--bd);border-radius:16px;max-width:380px;margin:22px auto 0;padding:20px;font-family:system-ui,sans-serif}
-.btn{background:var(--acc);color:#fff;border:0;border-radius:999px;padding:10px 22px;font-size:15px;cursor:pointer;font-family:system-ui,sans-serif}
-.btn.alt{background:transparent;color:var(--fg);border:1px solid var(--bd)}
+.lnk{color:var(--fg);background:none;border:0;cursor:pointer;padding:0;font:14px system-ui,sans-serif;text-decoration:underline}
+.hero{max-width:980px;margin:0 auto;text-align:center;padding:64px 20px}
+.hero h1{font-size:clamp(30px,7vw,52px);margin:0 0 6px}
+.signin{background:var(--card);border:1px solid var(--bd);border-radius:16px;max-width:380px;margin:26px auto 0;padding:20px;font-family:system-ui,sans-serif}
 .gbtn{display:inline-flex;align-items:center;gap:10px;background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:999px;padding:10px 20px;font:500 15px system-ui,sans-serif;cursor:pointer}
 .gbtn svg{width:18px;height:18px}
-.mut{color:var(--mut);font-size:13px;font-family:system-ui,sans-serif}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
-.ph{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:54px;color:rgba(255,255,255,.88)}
-.cb{padding:12px 14px;display:flex;flex-direction:column;gap:6px;flex:1}.cb p{margin:0;color:var(--mut);font-size:14px;flex:1}
-.tag{font:600 11px system-ui,sans-serif;color:var(--acc);text-transform:uppercase;letter-spacing:.06em}
-.feat{display:flex;flex-wrap:wrap;gap:24px;align-items:center;background:var(--card);border:1px solid var(--bd);border-radius:18px;padding:22px}
-.feat>div{flex:1;min-width:240px}
-#cart{position:fixed;top:0;right:0;bottom:0;width:min(340px,92vw);background:var(--card);border-left:1px solid var(--bd);padding:calc(18px + env(safe-area-inset-top,0px)) 18px 18px;transform:translateX(105%);transition:transform .25s;font-family:system-ui,sans-serif;overflow:auto;z-index:5}
-#cart.open{transform:none}.row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}
+.btn{background:var(--acc);color:#fff;border:0;border-radius:999px;padding:10px 22px;font-size:15px;cursor:pointer;font-family:system-ui,sans-serif}
+.btn.alt{background:transparent;color:var(--fg);border:1px solid var(--bd)}
+.mut{color:var(--mut);font:13px system-ui,sans-serif}
 #demo{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:6;padding:20px}
-#demo>div{background:var(--card);border-radius:16px;padding:20px;max-width:340px;width:100%;font-family:system-ui,sans-serif}
+#demo>div{background:var(--card);border-radius:16px;padding:20px;max-width:340px;width:100%;font-family:system-ui,sans-serif;text-align:left}
 #demo input{width:100%;box-sizing:border-box;padding:10px;margin:10px 0;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);font:inherit}
-#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font:14px system-ui,sans-serif;display:none;max-width:90%;z-index:7}
-footer{text-align:center;color:var(--mut);padding:30px 20px 50px;font:13px system-ui,sans-serif}
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font:14px system-ui,sans-serif;display:none;max-width:90%}
 </style></head>
 <body>
 <div id="root"></div>
-<div id="cart"></div>
-<div id="demo"><div><b>Demo sign-in</b><p class="mut">Google sign-in is not connected yet, so this is a preview. Enter any Gmail address to try the saved-cart feature.</p><input id="dm" type="email" placeholder="you@gmail.com"><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn alt" onclick="demoClose()">Cancel</button><button class="btn" onclick="demoGo()">Continue</button></div></div></div>
+<div id="demo"><div><b>Preview sign-in</b><p class="mut">Google sign-in isn't connected in this preview. Enter any Gmail address to see how the page looks after signing in.</p><input id="dm" type="email" placeholder="you@gmail.com"><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn alt" onclick="demoClose()">Cancel</button><button class="btn" onclick="demoGo()">Continue</button></div></div></div>
 <div id="toast"></div>
 <script>
-/* ====== SETTINGS: paste your Google OAuth Client ID between the quotes to turn on real Google sign-in ====== */
+/* Paste your Google OAuth Client ID between the quotes to turn on real Google sign-in */
 const CONFIG={GOOGLE_CLIENT_ID:''};
 
-const PRODUCTS=[
- {id:'hat',n:'Crochet Bucket Hat',d:'Soft, sun-ready and handmade.',c:'#d9a0a0'},
- {id:'coaster',n:'Flower Coaster Set',d:'Set of four cheerful coasters.',c:'#9db39a'},
- {id:'pouch',n:'Mini Pouch',d:'Tiny zip pouch for coins and earphones.',c:'#d9a53b'},
- {id:'charm',n:'Bag Charm',d:'A little crochet friend for your bag.',c:'#7f93b8'}];
-const TOTE={id:'tote',n:'Reversible Tote Bag'};
-
-let user=null,cart=[];
+let user=null,tc=null;
 const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const key=()=>'wk_cart_'+(user?user.email:'guest');
-function loadCart(){try{cart=JSON.parse(ls.get(key())||'[]')}catch(e){cart=[]}}
-function saveCart(){ls.set(key(),JSON.stringify(cart))}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3200)}
 
-function signIn(u){
- let guest=[];try{guest=JSON.parse(ls.get('wk_cart_guest')||'[]')}catch(e){}
- user=u;ls.set('wk_user',JSON.stringify(u));loadCart();
- guest.forEach(g=>{const f=cart.find(x=>x.id===g.id);f?f.q+=g.q:cart.push(g)});
- if(guest.length){ls.del('wk_cart_guest');saveCart()}
- render();toast('Welcome, '+u.name.split(' ')[0]+'!');
-}
-function signOut(){
- if(window.google&&google.accounts&&google.accounts.id)google.accounts.id.disableAutoSelect();
- user=null;ls.del('wk_user');loadCart();render();toast('Signed out');
-}
-function parseJwt(t){const b=t.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');return JSON.parse(decodeURIComponent(atob(b).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join('')))}
-function onGoogle(r){try{const p=parseJwt(r.credential);signIn({email:p.email,name:p.name||p.email,pic:p.picture||''})}catch(e){toast('Sign-in failed. Please try again.')}}
+function signIn(u){user=u;ls.set('wk_user',JSON.stringify(u));render()}
+function signOut(){user=null;ls.del('wk_user');render()}
 
-/* real Google button (only runs when a Client ID is set and the page is hosted, e.g. GitHub Pages) */
-function initGoogle(){
- const box=document.getElementById('gbox');if(!box||user||!CONFIG.GOOGLE_CLIENT_ID)return;
- const go=()=>{google.accounts.id.initialize({client_id:CONFIG.GOOGLE_CLIENT_ID,callback:onGoogle});google.accounts.id.renderButton(box,{theme:'outline',size:'large',shape:'pill',text:'signin_with'})};
- if(window.google&&google.accounts)return go();
- if(document.getElementById('gis'))return;
- const s=document.createElement('script');s.id='gis';s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=()=>{box&&go()};document.head.appendChild(s);
+/* Google sign-in: opens Google's account chooser (accounts already signed in on this browser).
+   If none are signed in, Google shows its own login page in the same window. */
+function loadGoogle(){
+ if(!CONFIG.GOOGLE_CLIENT_ID||document.getElementById('gis'))return;
+ const s=document.createElement('script');s.id='gis';s.src='https://accounts.google.com/gsi/client';s.async=true;
+ s.onload=()=>{tc=google.accounts.oauth2.initTokenClient({client_id:CONFIG.GOOGLE_CLIENT_ID,scope:'openid email profile',callback:onToken,error_callback:()=>toast('Sign-in was cancelled.')})};
+ document.head.appendChild(s);
 }
-const G='<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.3.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.500 0 11.900-2.100 15.900-5.800l-7.500-5.800c-2.100 1.400-4.800 2.300-8.400 2.300-6.300 0-11.600-4.100-13.500-9.800l-7.900 6.100C6.500 42.600 14.600 48 24 48z"/></svg>';
+function googleSignIn(){
+ if(!CONFIG.GOOGLE_CLIENT_ID)return demoOpen();
+ if(!tc)return toast('Google is still loading. Please try again in a moment.');
+ tc.requestAccessToken({prompt:'select_account'});
+}
+async function onToken(r){
+ if(!r||r.error)return toast('Sign-in failed. Please try again.');
+ try{const res=await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+r.access_token}});
+  const p=await res.json();signIn({email:p.email,name:p.name||p.email,pic:p.picture||''})}
+ catch(e){toast('Could not complete sign-in.')}
+}
+
 function demoOpen(){document.getElementById('demo').style.display='flex';document.getElementById('dm').focus()}
 function demoClose(){document.getElementById('demo').style.display='none'}
 function demoGo(){const e=document.getElementById('dm').value.trim().toLowerCase();
  if(!/^[^\s@]+@gmail\.com$/.test(e))return toast('Please enter a valid Gmail address');
  demoClose();signIn({email:e,name:e.split('@')[0],pic:''})}
 
-function add(id,n){const f=cart.find(x=>x.id===id);f?f.q++:cart.push({id,n,q:1});saveCart();render();toast('Added to cart'+(user?'':' (sign in to keep it on your account)'))}
-function chg(id,d){const f=cart.find(x=>x.id===id);if(!f)return;f.q+=d;if(f.q<1)cart=cart.filter(x=>x.id!==id);saveCart();render();openCart()}
-function openCart(){document.getElementById('cart').classList.add('open')}
-function closeCart(){document.getElementById('cart').classList.remove('open')}
-function renderCart(){
- document.getElementById('cart').innerHTML=`<div class="row" style="border:0"><b>Your cart</b><button class="lnk" onclick="closeCart()" aria-label="Close cart">✕</button></div>
- ${user?`<p class="mut">Saved to ${esc(user.email)}</p>`:'<p class="mut">Sign in with Google to keep your cart on your account.</p>'}
- ${cart.map(i=>`<div class="row"><span>${esc(i.n)}</span><span><button class="btn alt" style="padding:2px 10px" onclick="chg('${i.id}',-1)">−</button> ${i.q} <button class="btn alt" style="padding:2px 10px" onclick="chg('${i.id}',1)">+</button></span></div>`).join('')||'<p class="mut">Your cart is empty.</p>'}
- ${cart.length?'<p style="margin-top:16px"><button class="btn" onclick="toast(\'Checkout is coming soon!\')">Checkout</button></p>':''}`;
-}
+const G='<svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.3.8-4.7l-7.9-6.1C.9 16.4 0 20.1 0 24s.9 7.6 2.6 10.8l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
+
 function render(){
- const n=cart.reduce((s,i)=>s+i.q,0),first=user?esc(user.name.split(' ')[0]):'';
+ const first=user?esc(user.name.split(' ')[0]):'';
  document.getElementById('root').innerHTML=`
-<header><b>🧶 Warm Knots</b><a href="#shop">Shop</a>
- ${user?`<span class="user">${user.pic?`<img class="av" src="${esc(user.pic)}" alt="" referrerpolicy="no-referrer">`:`<span class="av">${esc(user.name[0].toUpperCase())}</span>`}${first}<button class="lnk" onclick="signOut()">Sign out</button></span>`:`<button class="lnk" onclick="document.getElementById('hero').scrollIntoView()">Sign in</button>`}
- <button class="btn alt" onclick="openCart()">Cart (${n})</button></header>
-<section class="hero" id="hero">
- <div class="mut" style="letter-spacing:.12em;text-transform:uppercase">Handmade crochet</div>
- <h1>${user?`Welcome back, ${first}!`:'Welcome to Warm Knots'}</h1>
- <p>${user?'Good to see you again. Your cart is saved to your account, so pick up right where you left off.':'Cozy, handmade crochet pieces made with care. Sign in to save your cart and your orders.'}</p>
- ${user?`<p><a class="btn" style="text-decoration:none;display:inline-block" href="#shop">Start browsing</a></p>`:`<div class="signin"><div style="margin-bottom:12px"><b>Sign in</b></div>
-  ${CONFIG.GOOGLE_CLIENT_ID?'<div id="gbox" style="display:flex;justify-content:center"></div>':`<button class="gbtn" onclick="demoOpen()">${G}Sign in with Google</button>`}
-  <div class="mut" style="margin-top:12px">Or just browse as a guest. You can sign in any time.</div></div>`}
-</section>
-<section><div class="feat"><div><span class="tag">Our signature piece</span><h2 style="margin:6px 0">${TOTE.n}</h2><p class="mut" style="font-size:15px">Two sides, two functions, one bag. A handmade crochet side for style and a waterproof side for rainy days. Choose your own colors and pattern.</p>
- <button class="btn" onclick="toast('The tote customizer is the next page we build!')">Design yours</button> <button class="btn alt" onclick="add('tote','${TOTE.n}')">Add to cart</button></div>
- <div style="flex:0 0 auto;width:150px;height:150px;border-radius:18px;background:repeating-linear-gradient(135deg,#9db39a,#9db39a 6px,#8ea68b 6px,#8ea68b 12px);display:flex;align-items:center;justify-content:center;font-size:60px">👜</div></div></section>
-<section id="shop"><h2>More from our crochet collection</h2><div class="grid">
- ${PRODUCTS.map(p=>`<div class="card"><div class="ph" style="background:repeating-linear-gradient(135deg,${p.c},${p.c} 6px,rgba(0,0,0,.08) 6px,rgba(0,0,0,.08) 12px)">${p.n[0]}</div><div class="cb"><b>${p.n}</b><p>${p.d}</p><button class="btn alt" onclick="add('${p.id}','${p.n}')">Add to cart</button></div></div>`).join('')}</div></section>
-<footer>Handmade with love in Tagum City · © Warm Knots</footer>`;
- renderCart();initGoogle();
+<header><b class="brand">Warm Knots</b>${user?`<span class="user">${user.pic?`<img class="av" src="${esc(user.pic)}" alt="" referrerpolicy="no-referrer">`:`<span class="av">${esc(user.name[0].toUpperCase())}</span>`}${first}<button class="lnk" onclick="signOut()">Sign out</button></span>`:''}</header>
+<section class="hero">
+ <h1>${user?`Welcome back, ${first}!`:'Welcome to <span class="brand">Warm Knots</span>'}</h1>
+ <p class="sub">Cozy, handmade crochet pieces made with care.</p>
+ ${user?'':`<div class="signin"><div style="margin-bottom:12px"><b>Sign in</b></div><button class="gbtn" onclick="googleSignIn()">${G}Sign in with Google</button></div>`}
+</section>`;
 }
-(function init(){try{const u=JSON.parse(ls.get('wk_user')||'null');if(u&&u.email)user=u}catch(e){}loadCart();render()})();
+(function init(){try{const u=JSON.parse(ls.get('wk_user')||'null');if(u&&u.email)user=u}catch(e){}render();loadGoogle()})();
 </script></body></html>
