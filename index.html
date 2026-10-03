@@ -46,7 +46,8 @@ const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3200)}
 
-function signIn(u){user=u;ls.set('wk_user',JSON.stringify(u));render()}
+const LIVE=/github\.io$/.test(location.hostname);
+function signIn(u){user=u;ls.set('wk_user',JSON.stringify(u));if(LIVE){location.href='shop.html';return}render();toast('On your live site, signing in opens the shop page.')}
 function signOut(){user=null;ls.del('wk_user');render()}
 
 /* Google sign-in: opens Google's account chooser (accounts already signed in on this browser).
@@ -88,5 +89,5 @@ function render(){
 </section>
 <footer class="foot"><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a></footer>`;
 }
-(function init(){try{const u=JSON.parse(ls.get('wk_user')||'null');if(u&&u.email)user=u}catch(e){}render();loadGoogle()})();
+(function init(){try{const u=JSON.parse(ls.get('wk_user')||'null');if(u&&u.email)user=u}catch(e){}if(LIVE&&user){location.replace('shop.html');return}render();loadGoogle()})();
 </script></body></html>
