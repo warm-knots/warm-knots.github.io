@@ -29,6 +29,7 @@ header .brand{font-size:28px}
 #demo{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:6;padding:20px}
 #demo>div{background:var(--card);border-radius:16px;padding:20px;max-width:340px;width:100%;font-family:system-ui,sans-serif;text-align:left}
 #demo input{width:100%;box-sizing:border-box;padding:10px;margin:10px 0;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);font:inherit}
+footer.foot{text-align:center;padding:24px 20px;font:13px system-ui,sans-serif;color:var(--mut)}footer.foot a{color:var(--mut)}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font:14px system-ui,sans-serif;display:none;max-width:90%}
 </style></head>
 <body>
@@ -84,7 +85,8 @@ function render(){
  <h1>${user?`Welcome back, ${first}!`:'Welcome to <span class="brand">Warm Knots</span>'}</h1>
  <p class="sub">Cozy, handmade crochet pieces made with care.</p>
  ${user?'':`<div class="signin"><div style="margin-bottom:12px"><b>Sign in</b></div><button class="gbtn" onclick="googleSignIn()">${G}Sign in with Google</button></div>`}
-</section>`;
+</section>
+<footer class="foot"><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a></footer>`;
 }
 (function init(){try{const u=JSON.parse(ls.get('wk_user')||'null');if(u&&u.email)user=u}catch(e){}render();loadGoogle()})();
 </script></body></html>
