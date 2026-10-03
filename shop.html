@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="only light"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shop | Warm Knots</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap">
 <style>
-:root{--bg:#fbf6ef;--fg:#3a2e2a;--card:#fff;--mut:#8a7a70;--acc:#c8553d;--bd:#eadfd2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1f1a18;--fg:#f3e9df;--card:#2b2421;--mut:#b5a499;--bd:#3d322d}}
-:root[data-theme="dark"]{--bg:#1f1a18;--fg:#f3e9df;--card:#2b2421;--mut:#b5a499;--bd:#3d322d}
+:root{color-scheme:only light;--bg:#fbf6ef;--fg:#3a2e2a;--card:#fff;--mut:#8a7a70;--acc:#c8553d;--bd:#eadfd2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0;background:var(--bg);color:var(--fg);font-family:Georgia,'Times New Roman',serif;line-height:1.5}
 header{display:flex;gap:14px;align-items:center;padding:14px 20px;border-bottom:1px solid var(--bd)}
 .logo{width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid var(--bd);flex:none}
@@ -14,9 +12,9 @@ header{display:flex;gap:14px;align-items:center;padding:14px 20px;border-bottom:
 .user{display:flex;align-items:center;gap:8px;font:14px system-ui,sans-serif}
 .av{width:30px;height:30px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;object-fit:cover;font-weight:600}
 .lnk{color:var(--fg);background:none;border:0;cursor:pointer;padding:0;font:14px system-ui,sans-serif;text-decoration:underline}
-main{max-width:980px;margin:0 auto;padding:36px 20px 20px}
+main{max-width:860px;margin:0 auto;padding:36px 20px 20px}
 h1{font-size:clamp(28px,6vw,42px);margin:0}.sub{color:var(--mut);margin:6px 0 26px;font-size:17px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
 .cat{background:var(--card);border:1px solid var(--bd);border-radius:18px;overflow:hidden;padding:0;cursor:pointer;text-align:left;color:var(--fg);font:inherit;transition:transform .15s,box-shadow .15s}
 .cat:hover,.cat:focus-visible{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.1);outline:none}
 .pic,.tile{aspect-ratio:4/5;width:100%;display:block}.pic{object-fit:cover}
@@ -25,6 +23,8 @@ h1{font-size:clamp(28px,6vw,42px);margin:0}.sub{color:var(--mut);margin:6px 0 26
 .cap span{display:block;color:var(--mut);font:13px system-ui,sans-serif}
 footer{text-align:center;padding:24px 20px 40px;font:13px system-ui,sans-serif;color:var(--mut)}footer a{color:var(--mut)}
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font:14px system-ui,sans-serif;display:none;max-width:90%}
+@media(max-width:520px){header{padding:10px 14px;gap:10px}.logo{width:38px;height:38px}.brand{font-size:22px}.nm{display:none}main{padding:24px 14px 10px}h1{font-size:25px}.sub{font-size:15px;margin-bottom:18px}.grid{gap:10px}.cat{border-radius:12px}.cap{padding:8px 8px 10px}.cap b{font-size:15px}.cap span{display:none}.tile{font-size:10px;text-align:center;padding:4px;box-sizing:border-box}}
+.lnk{white-space:nowrap}
 </style></head>
 <body><div id="root"></div><div id="toast"></div>
 <script>
@@ -46,7 +46,7 @@ function render(){
  if(LIVE&&!user)return;
  const first=user?esc(user.name.split(' ')[0]):'';
  document.getElementById('root').innerHTML=`
-<header><img class="logo" src="${LOGO}" alt="Warm Knots logo"><span class="brand">Warm Knots</span>${user?`<span class="user">${user.pic?`<img class="av" src="${esc(user.pic)}" alt="" referrerpolicy="no-referrer">`:`<span class="av">${esc(user.name[0].toUpperCase())}</span>`}${first}<button class="lnk" onclick="signOut()">Sign out</button></span>`:''}</header>
+<header><img class="logo" src="${LOGO}" alt="Warm Knots logo"><span class="brand">Warm Knots</span>${user?`<span class="user">${user.pic?`<img class="av" src="${esc(user.pic)}" alt="" referrerpolicy="no-referrer">`:`<span class="av">${esc(user.name[0].toUpperCase())}</span>`}<span class="nm">${first}</span><button class="lnk" onclick="signOut()">Sign out</button></span>`:''}</header>
 <main><h1>What are we hooking you up with today?</h1><p class="sub">${user?`Hi, ${first}! `:''}Everything here is handmade with love, one loop at a time. Pick a category and get cozy.</p>
 <div class="grid">${CATS.map(c=>`<button class="cat" onclick="go('${c.id}')">${c.img?`<img class="pic" src="${c.img}" alt="${c.n}">`:`<div class="tile" style="background:repeating-linear-gradient(135deg,${c.c},${c.c} 7px,rgba(0,0,0,.07) 7px,rgba(0,0,0,.07) 14px)">Photo coming soon</div>`}<div class="cap"><b>${c.n}</b><span>${c.d}</span></div></button>`).join('')}</div></main>
 <footer><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a></footer>`;
