@@ -16,35 +16,45 @@
 .opts h3{font-size:15px;margin:18px 0 4px}.opts .mut{margin:0 0 8px}
 .sw{width:38px;height:38px;border-radius:50%;border:1px solid #cdbfae;padding:0;margin:0 8px 8px 0;cursor:pointer}.sw.on{outline:3px solid var(--acc);outline-offset:2px}
 .sum{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-top:18px;font-size:15px}
+.desc{white-space:pre-line;font-size:15px;margin-top:16px}
 .bar .pp{flex:1;font-size:13px;color:var(--mut)}.bar .pp b{display:block;font-size:20px;color:var(--fg)}
 </style></head>
 <body class="hasbar"><div id="root"></div>
 <script type="module">
-import {gate,getProduct,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,shade as sh,peso,BACK,toast,DEFAULT_TOTE_PRICE} from './app.js';
-/* Colors people can choose from. Edit names and hex codes here to match the yarn and fabric you really have. */
-const COLORS=[{n:'Cream',h:'#f2e6d0'},{n:'Sage',h:'#9db39a'},{n:'Dusty rose',h:'#d9a0a0'},{n:'Navy',h:'#2b3a5c'},{n:'Mustard',h:'#d9a53b'},{n:'Charcoal',h:'#444444'}];
-let PRICE=DEFAULT_TOTE_PRICE,user=null;
-const st={o:1,i:3,v:'out'};
-function bag(){const o=st.v==='out',b=COLORS[o?st.o:st.i].h,s=sh(b,.2),body='M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z';
+import {gate,getProduct,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,shade as sh,esc,peso,BACK,toast} from './app.js';
+let user=null,P=null,OUT=[],IN=[],OL='Outside',IL='Inside',fixedOut=false,fixedIn=false;
+const st={o:0,i:0,v:'out'};
+function bag(){const o=st.v==='out',b=(o?OUT[st.o]:IN[st.i]).h,s=sh(b,.2),body='M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z';
  return `<svg viewBox="0 0 200 220" role="img" aria-label="${o?'Crochet outside':'Waterproof inside'} of the tote bag"><defs><pattern id="pp" width="10" height="8" patternUnits="userSpaceOnUse"><rect width="10" height="8" fill="${b}"/><path d="M1 1L5 7L9 1" fill="none" stroke="${s}" stroke-width="1.3"/></pattern></defs>
 <path d="M62 84C62 14 138 14 138 84" fill="none" stroke="${sh(b,.22)}" stroke-width="9" stroke-linecap="round"/><path d="${body}" fill="${o?'url(#pp)':b}"/>
 ${o?'':`<path d="M28 80H100L60 210H45Q39 210 38 204Z" fill="#fff" opacity=".22"/><rect x="72" y="150" width="56" height="20" rx="4" fill="${sh(b,.25)}" opacity=".5"/><text x="100" y="164" text-anchor="middle" font-size="11" font-family="sans-serif" fill="#fff">waterproof</text>`}
 <path d="M28 80H172" stroke="${sh(b,.3)}" stroke-width="5" stroke-linecap="round"/></svg>`}
-const sws=k=>COLORS.map((c,i)=>`<button class="sw ${st[k]===i?'on':''}" style="background:${c.h}" aria-label="${c.n}" onclick="pick('${k}',${i})"></button>`).join('');
+const sws=(k,L)=>L.map((c,i)=>`<button class="sw ${st[k]===i?'on':''}" style="background:${c.h}" aria-label="${esc(c.n)}" onclick="pick('${k}',${i})"></button>`).join('');
 window.pick=(k,i)=>{st[k]=i;st.v=k==='o'?'out':'in';render()};
 window.setView=v=>{st.v=v;render()};
 window.addCart=async()=>{
- const o=COLORS[st.o],i=COLORS[st.i],id='tote-'+st.o+'-'+st.i;
+ const o=OUT[st.o],i=IN[st.i],id='tote-'+o.n+'-'+i.n;
+ const variants=[{g:OL,n:o.n,h:o.h},{g:IL,n:i.n,h:i.h}];
  try{const c=await getCart(user.uid),f=c.find(x=>x.id===id);
-  f?f.q++:c.push({id,pid:'tote',name:'Reversible Tote Bag',o:{n:o.n,h:o.h},i:{n:i.n,h:i.h},price:PRICE,q:1,sel:true});
+  f?f.q++:c.push({id,pid:'tote',name:P.name,price:P.price,q:1,sel:true,variants});
   await saveCart(user.uid,c);setBadge(cartTotalQty(c));toast('Added to your cart')}
  catch(e){toast('Could not add to cart. Please try again.')}
 };
+const head=t=>`<header><button class="back" onclick="location.href='category.html?c=${esc(P?P.category:'')}'" aria-label="Back">${BACK}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
 function render(){
- document.getElementById('root').innerHTML=`<header><button class="back" onclick="location.href='category.html?c=bags'" aria-label="Back to bags">${BACK}</button><span class="ttl">Reversible Tote Bag</span>${cartBtn()}</header>
-<main><div class="wrap"><div><div id="pv">${bag()}</div><div class="seg"><button class="sg ${st.v==='out'?'on':''}" onclick="setView('out')">Outside</button><button class="sg ${st.v==='in'?'on':''}" onclick="setView('in')">Inside</button></div></div>
-<div class="opts"><h3>Outside color</h3><p class="mut">The crochet side: ${COLORS[st.o].n}</p>${sws('o')}<h3>Inside color</h3><p class="mut">The waterproof side: ${COLORS[st.i].n}</p>${sws('i')}
-<div class="sum"><b>Your design</b><br>${COLORS[st.o].n} crochet outside, ${COLORS[st.i].n} waterproof inside</div></div></div></main>
-<div class="bar"><div class="pp">Price<b>${peso(PRICE)}</b></div><button class="btn" onclick="addCart()">Add to cart</button></div>`}
-gate(async u=>{user=u;try{const t=await getProduct('tote');if(t&&t.price)PRICE=Number(t.price)}catch(e){}render();initBadge(u.uid)});
+ document.getElementById('root').innerHTML=head(P.name)+`<main><div class="wrap"><div><div id="pv">${bag()}</div><div class="seg"><button class="sg ${st.v==='out'?'on':''}" onclick="setView('out')">${esc(OL)}</button><button class="sg ${st.v==='in'?'on':''}" onclick="setView('in')">${esc(IL)}</button></div></div>
+<div class="opts">${fixedOut?'':`<h3>${esc(OL)} color</h3><p class="mut">The crochet side: ${esc(OUT[st.o].n)}</p>${sws('o',OUT)}`}${fixedIn?'':`<h3>${esc(IL)} color</h3><p class="mut">The waterproof side: ${esc(IN[st.i].n)}</p>${sws('i',IN)}`}
+<div class="sum"><b>Your design</b><br>${esc(OUT[st.o].n)} crochet ${esc(OL.toLowerCase())}, ${esc(IN[st.i].n)} waterproof ${esc(IL.toLowerCase())}</div><div class="desc">${esc(P.description||'')}</div></div></div></main>
+<div class="bar"><div class="pp">Price<b>${peso(P.price)}</b></div><button class="btn" onclick="addCart()">Add to cart</button></div>`}
+gate(async u=>{
+ user=u;
+ document.getElementById('root').innerHTML=head('Loading...')+'<main><p class="mut">Loading...</p></main>';
+ initBadge(u.uid);
+ P=await getProduct('tote');
+ if(!P){P=null;document.getElementById('root').innerHTML=head('Not available')+'<main><div class="empty"><h2>This product is not available right now</h2><p><a href="shop.html">Back to the shop</a></p></div></main>';return}
+ const og=(P.options||[]);const a=og[0]&&og[0].colors&&og[0].colors.length?og[0]:null,b=og[1]&&og[1].colors&&og[1].colors.length?og[1]:null;
+ OUT=a?a.colors:[{n:'Natural',h:'#f2e6d0'}];IN=b?b.colors:[{n:'Standard',h:'#9db39a'}];
+ OL=(og[0]&&og[0].label)||'Outside';IL=(og[1]&&og[1].label)||'Inside';fixedOut=!a;fixedIn=!b;
+ render();
+});
 </script></body></html>
