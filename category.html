@@ -8,11 +8,11 @@
 </head>
 <body><div id="root"></div>
 <script type="module">
-import {gate,loadProducts,loadCategories,getLoadError,cartBtn,initBadge,esc,peso,BACK} from './app.js';
+import {gate,loadProducts,loadCategories,getLoadError,cartBtn,initBadge,esc,peso,BACK,HOME} from './app.js';
 const q=new URLSearchParams(location.search).get('c')||'';
 window.open_=(id,designer)=>location.href=designer?'tote.html':'product.html?id='+encodeURIComponent(id);
 gate(async user=>{
- const head=t=>`<header><button class="back" onclick="location.href='shop.html'" aria-label="Back to categories">${BACK}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
+ const head=t=>`<header><button class="back" onclick="location.href='shop.html'" aria-label="Back to categories">${BACK}</button><button class="back" onclick="location.href='shop.html'" aria-label="Home">${HOME}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
  document.getElementById('root').innerHTML=head('Shop')+'<main><p class="mut">Loading...</p></main>';
  initBadge(user.uid);
  const [cats,all]=await Promise.all([loadCategories(),loadProducts()]);
