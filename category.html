@@ -8,16 +8,15 @@
 </head>
 <body><div id="root"></div>
 <script type="module">
-import {gate,loadProducts,getLoadError,cartBtn,initBadge,esc,peso,BACK,CATS,toast} from './app.js';
-const q=new URLSearchParams(location.search).get('c'),cat=CATS[q]?q:'bags';
+import {gate,loadProducts,loadCategories,getLoadError,cartBtn,initBadge,esc,peso,BACK} from './app.js';
+const q=new URLSearchParams(location.search).get('c')||'';
 window.open_=(id,designer)=>location.href=designer?'tote.html':'product.html?id='+encodeURIComponent(id);
 gate(async user=>{
- const head=`<header><button class="back" onclick="location.href='shop.html'" aria-label="Back to categories">${BACK}</button><span class="ttl">${CATS[cat]}</span>${cartBtn()}</header>`;
- document.getElementById('root').innerHTML=head+'<main><p class="mut">Loading...</p></main>';
+ const head=t=>`<header><button class="back" onclick="location.href='shop.html'" aria-label="Back to categories">${BACK}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
+ document.getElementById('root').innerHTML=head('Shop')+'<main><p class="mut">Loading...</p></main>';
  initBadge(user.uid);
- let ps=[];
- try{ps=(await loadProducts()).filter(p=>p.category===cat)}catch(e){ps=[]}
- const err=getLoadError();
- document.querySelector('main').innerHTML=(ps.length?`<div class="grid">${ps.map(p=>`<button class="cat" onclick="open_('${esc(p.id)}',${!!p.designer})"><img class="pic" src="${p.image}" alt="${esc(p.name)}">${p.soldOut?'<span class="so">Sold out</span>':''}<div class="cap"><b>${esc(p.name)}</b>${!p.designer&&p.price?`<span>${peso(p.price)}</span>`:''}</div></button>`).join('')}</div>`:`<div class="empty"><h2>New ${CATS[cat].toLowerCase()} are on the way</h2><p>We're stitching away. Check back soon.</p></div>`)+(err?`<p class="mut" style="margin-top:16px;text-align:center">Some products could not be loaded (${esc(err)}).</p>`:'');
+ const [cats,all]=await Promise.all([loadCategories(),loadProducts()]);
+ const cat=cats.find(c=>c.id===q),err=getLoadError(),ps=all.filter(p=>p.category===q);
+ document.getElementById('root').innerHTML=head(cat?cat.name:'Shop')+`<main>${(ps.length?`<div class="grid">${ps.map(p=>`<button class="cat" onclick="open_('${esc(p.id)}',${!!p.designer})"><img class="pic" src="${p.image}" alt="${esc(p.name)}">${p.soldOut?'<span class="so">Sold out</span>':''}<div class="cap"><b>${esc(p.name)}</b>${!p.designer&&p.price?`<span>${peso(p.price)}</span>`:''}</div></button>`).join('')}</div>`:`<div class="empty"><h2>New ${esc(cat?cat.name.toLowerCase():'items')} are on the way</h2><p>We're stitching away. Check back soon.</p></div>`)+(err?`<p class="mut" style="margin-top:16px;text-align:center">Some products could not be loaded (${esc(err)}).</p>`:'')}</main>`;
 });
 </script></body></html>
