@@ -26,7 +26,8 @@ const FB_URL=''; /* paste your Facebook Page link between the quotes so Check Ou
 let user=null,items=[],imgs={},edit=false;
 const find=id=>items.find(x=>x.id===id);
 const save=()=>saveCart(user.uid,items).catch(()=>toast('Could not save your cart. Please check your connection.'));
-const thumb=x=>x.o?`<svg viewBox="0 0 200 220" aria-hidden="true"><path d="M62 84C62 14 138 14 138 84" fill="none" stroke="${sh(x.o.h,.22)}" stroke-width="9" stroke-linecap="round"/><path d="M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z" fill="${x.o.h}" stroke="${sh(x.o.h,.2)}" stroke-width="2"/><path d="M28 80H172" stroke="${sh(x.o.h,.3)}" stroke-width="5" stroke-linecap="round"/></svg>`:(imgs[x.pid]?`<img src="${imgs[x.pid]}" alt="">`:'');
+const vars=x=>x.variants||(x.o?[{g:'Outside',n:x.o.n,h:x.o.h},{g:'Inside',n:x.i.n,h:x.i.h}]:[]);
+const thumb=x=>{if(x.pid==='tote'){const h=(vars(x)[0]||{h:'#f2e6d0'}).h;return `<svg viewBox="0 0 200 220" aria-hidden="true"><path d="M62 84C62 14 138 14 138 84" fill="none" stroke="${sh(h,.22)}" stroke-width="9" stroke-linecap="round"/><path d="M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z" fill="${h}" stroke="${sh(h,.2)}" stroke-width="2"/><path d="M28 80H172" stroke="${sh(h,.3)}" stroke-width="5" stroke-linecap="round"/></svg>`}return imgs[x.pid]?`<img src="${imgs[x.pid]}" alt="">`:''};
 window.tog=id=>{const f=find(id);f.sel=!f.sel;save();render()};
 window.allTog=()=>{const a=items.every(x=>x.sel);items.forEach(x=>x.sel=!a);save();render()};
 window.qty=(id,d)=>{const f=find(id);f.q=Math.max(1,f.q+d);save();render()};
@@ -34,12 +35,12 @@ window.del=id=>{items=items.filter(x=>x.id!==id);save();render()};
 window.delSel=()=>{items=items.filter(x=>!x.sel);save();render()};
 window.toggleEdit=()=>{edit=!edit;render()};
 window.chk=()=>{const s=items.filter(x=>x.sel);if(!s.length)return;
- const lines=s.map((x,i)=>`${i+1}. ${x.name}${x.o?` (Outside: ${x.o.n}, Inside: ${x.i.n})`:''} x${x.q} - ${peso(x.price*x.q)}`);
+ const lines=s.map((x,i)=>`${i+1}. ${x.name}${vars(x).length?` (${vars(x).map(v=>v.g+': '+v.n).join(', ')})`:''} x${x.q} - ${peso(x.price*x.q)}`);
  const msg=`Hi Warm Knots! I'd like to order:\n${lines.join('\n')}\nTotal: ${peso(s.reduce((t,x)=>t+x.price*x.q,0))}\nName: ${user.name} (${user.email})`;
  try{navigator.clipboard.writeText(msg)}catch(e){}
  if(FB_URL)window.open(FB_URL,'_blank');
  toast(FB_URL?'Order details copied. Paste them in our Facebook chat!':'Order details copied. Send them to our Facebook Page to place your order.')};
-const row=x=>`<div class="it"><input type="checkbox" ${x.sel?'checked':''} onchange="tog('${x.id}')" aria-label="Select item"><div class="th">${thumb(x)}</div><div class="inf"><div class="nmx">${esc(x.name)}</div><div class="var">${x.o?`<i class="dot" style="background:${x.o.h}"></i>Outside: ${esc(x.o.n)} &middot; <i class="dot" style="background:${x.i.h}"></i>Inside: ${esc(x.i.n)}`:''}</div><div class="pq"><span class="pr">${peso(x.price)}</span>${edit?`<button class="dl" onclick="del('${x.id}')">Delete</button>`:`<span class="qt"><button onclick="qty('${x.id}',-1)" aria-label="Less">&minus;</button><span>${x.q}</span><button onclick="qty('${x.id}',1)" aria-label="More">+</button></span>`}</div></div></div>`;
+const row=x=>`<div class="it"><input type="checkbox" ${x.sel?'checked':''} onchange="tog('${x.id}')" aria-label="Select item"><div class="th">${thumb(x)}</div><div class="inf"><div class="nmx">${esc(x.name)}</div><div class="var">${vars(x).map(v=>`<i class="dot" style="background:${v.h}"></i>${esc(v.g)}: ${esc(v.n)}`).join(' &middot; ')}</div><div class="pq"><span class="pr">${peso(x.price)}</span>${edit?`<button class="dl" onclick="del('${x.id}')">Delete</button>`:`<span class="qt"><button onclick="qty('${x.id}',-1)" aria-label="Less">&minus;</button><span>${x.q}</span><button onclick="qty('${x.id}',1)" aria-label="More">+</button></span>`}</div></div></div>`;
 function render(){
  const sel=items.filter(x=>x.sel),total=sel.reduce((s,x)=>s+x.price*x.q,0),n=items.reduce((s,x)=>s+x.q,0),selN=sel.reduce((s,x)=>s+x.q,0),all=items.length&&items.every(x=>x.sel);
  document.getElementById('root').innerHTML=`<header><button class="back" onclick="history.length>1?history.back():location.href='shop.html'" aria-label="Back">${BACK}</button><span class="ttl">Shopping Cart${n?` (${n})`:''}</span>${items.length?`<button class="edit" onclick="toggleEdit()">${edit?'Done':'Edit'}</button>`:''}</header>
