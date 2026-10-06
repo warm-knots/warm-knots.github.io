@@ -40,14 +40,14 @@ const CATS=[
  {id:'plushies',n:'Plushies',d:'Soft crochet friends',c:'#9fb3d1'}];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3000)}
-function go(id){const c=CATS.find(x=>x.id===id);toast('The '+c.n+' page is coming next!')}
+function go(id){if(LIVE)location.href='category.html?c='+id;else toast('On your live site this opens the '+CATS.find(x=>x.id===id).n+' page.')}
 function signOut(){try{localStorage.removeItem('wk_user')}catch(e){}user=null;if(LIVE)location.href='index.html';else render()}
 function render(){
  if(LIVE&&!user)return;
  const first=user?esc(user.name.split(' ')[0]):'';
  document.getElementById('root').innerHTML=`
 <header><img class="logo" src="${LOGO}" alt="Warm Knots logo"><span class="brand">Warm Knots</span>${user?`<span class="user">${user.pic?`<img class="av" src="${esc(user.pic)}" alt="" referrerpolicy="no-referrer">`:`<span class="av">${esc(user.name[0].toUpperCase())}</span>`}<span class="nm">${first}</span><button class="lnk" onclick="signOut()">Sign out</button></span>`:''}</header>
-<main><h1>What are we hooking you up with today?</h1><p class="sub">${user?`Hi, ${first}! `:''}Everything here is handmade with love, one loop at a time. Pick your style and get cozy.</p>
+<main><h1>What are we hooking you up with today?</h1><p class="sub">${user?`Hi, ${first}! `:''}Everything here is handmade with love, one loop at a time. Pick a category and get cozy.</p>
 <div class="grid">${CATS.map(c=>`<button class="cat" onclick="go('${c.id}')">${c.img?`<img class="pic" src="${c.img}" alt="${c.n}">`:`<div class="tile" style="background:repeating-linear-gradient(135deg,${c.c},${c.c} 7px,rgba(0,0,0,.07) 7px,rgba(0,0,0,.07) 14px)">Photo coming soon</div>`}<div class="cap"><b>${c.n}</b><span>${c.d}</span></div></button>`).join('')}</div></main>
 <footer><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a></footer>`;
 }
