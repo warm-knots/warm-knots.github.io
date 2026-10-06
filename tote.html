@@ -7,13 +7,13 @@
 <link rel="stylesheet" href="style.css">
 <style>
 .wrap{display:grid;grid-template-columns:1fr;gap:18px}
-@media(min-width:720px){.wrap{grid-template-columns:1fr 1fr;align-items:start}}
-#pv{background:#f3ebdf;border-radius:16px;height:clamp(230px,60vw,330px);display:flex;align-items:center;justify-content:center;border:1px solid var(--bd)}
-#pv svg{height:86%;width:auto}
-.opts{font-family:system-ui,sans-serif}.seg{display:flex;margin-top:12px}
-.sg{flex:1;border:1px solid var(--bd);padding:9px 0;font:15px system-ui,sans-serif;cursor:pointer;background:#fff;color:var(--fg)}
-.sg:first-child{border-radius:10px 0 0 10px}.sg:last-child{border-radius:0 10px 10px 0}.sg.on{background:var(--acc);color:#fff;border-color:var(--acc)}
-.opts h3{font-size:15px;margin:18px 0 4px}.opts .mut{margin:0 0 8px}
+@media(min-width:720px){.wrap{grid-template-columns:1.1fr 1fr;align-items:start}}
+.frame{display:flex;border:1px solid #cdbfae;border-radius:14px;overflow:hidden;background:#fff}
+.half{flex:1;min-width:0}.half+.half{border-left:1px solid #cdbfae}
+.pane{aspect-ratio:4/5;display:flex;align-items:center;justify-content:center;background:#f3ebdf}
+.pane svg{height:82%;width:auto}.pane img{width:100%;height:100%;object-fit:cover;display:block}
+.cap2{text-align:center;font:13px system-ui,sans-serif;color:var(--mut);padding:7px 0;border-top:1px solid #cdbfae;background:#fff}
+.opts{font-family:system-ui,sans-serif}.opts h3{font-size:15px;margin:0 0 4px}.opts h3:not(:first-child){margin-top:18px}.opts .mut{margin:0 0 8px}
 .sw{width:38px;height:38px;border-radius:50%;border:1px solid #cdbfae;padding:0;margin:0 8px 8px 0;cursor:pointer}.sw.on{outline:3px solid var(--acc);outline-offset:2px}
 .sum{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-top:18px;font-size:15px}
 .desc{white-space:pre-line;font-size:15px;margin-top:16px}
@@ -21,20 +21,20 @@
 </style></head>
 <body class="hasbar"><div id="root"></div>
 <script type="module">
-import {gate,getProduct,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,shade as sh,esc,peso,BACK,toast} from './app.js';
-let user=null,P=null,OUT=[],IN=[],OL='Outside',IL='Inside',fixedOut=false,fixedIn=false;
-const st={o:0,i:0,v:'out'};
-function bag(){const o=st.v==='out',b=(o?OUT[st.o]:IN[st.i]).h,s=sh(b,.2),body='M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z';
- return `<svg viewBox="0 0 200 220" role="img" aria-label="${o?'Crochet outside':'Waterproof inside'} of the tote bag"><defs><pattern id="pp" width="10" height="8" patternUnits="userSpaceOnUse"><rect width="10" height="8" fill="${b}"/><path d="M1 1L5 7L9 1" fill="none" stroke="${s}" stroke-width="1.3"/></pattern></defs>
-<path d="M62 84C62 14 138 14 138 84" fill="none" stroke="${sh(b,.22)}" stroke-width="9" stroke-linecap="round"/><path d="${body}" fill="${o?'url(#pp)':b}"/>
+import {gate,getProduct,loadColorPhotos,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,shade as sh,esc,peso,BACK,toast} from './app.js';
+let user=null,P=null,OUT=[],IN=[],OL='Outside',IL='Inside',fixedOut=false,fixedIn=false,photos={};
+const st={o:0,i:0};
+function bag(side,b){const o=side==='out',s=sh(b,.2),body='M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z';
+ return `<svg viewBox="0 0 200 220" role="img" aria-label="${o?'Crochet outside':'Waterproof inside'} of the tote bag"><defs><pattern id="pp-${side}" width="10" height="8" patternUnits="userSpaceOnUse"><rect width="10" height="8" fill="${b}"/><path d="M1 1L5 7L9 1" fill="none" stroke="${s}" stroke-width="1.3"/></pattern></defs>
+<path d="M62 84C62 14 138 14 138 84" fill="none" stroke="${sh(b,.22)}" stroke-width="9" stroke-linecap="round"/><path d="${body}" fill="${o?`url(#pp-${side})`:b}"/>
 ${o?'':`<path d="M28 80H100L60 210H45Q39 210 38 204Z" fill="#fff" opacity=".22"/><rect x="72" y="150" width="56" height="20" rx="4" fill="${sh(b,.25)}" opacity=".5"/><text x="100" y="164" text-anchor="middle" font-size="11" font-family="sans-serif" fill="#fff">waterproof</text>`}
 <path d="M28 80H172" stroke="${sh(b,.3)}" stroke-width="5" stroke-linecap="round"/></svg>`}
+const pane=side=>{const c=side==='out'?OUT[st.o]:IN[st.i];return photos[c.id]?`<img src="${photos[c.id]}" alt="${esc(c.n)}">`:bag(side,c.h)};
 const sws=(k,L)=>L.map((c,i)=>`<button class="sw ${st[k]===i?'on':''}" style="background:${c.h}" aria-label="${esc(c.n)}" onclick="pick('${k}',${i})"></button>`).join('');
-window.pick=(k,i)=>{st[k]=i;st.v=k==='o'?'out':'in';render()};
-window.setView=v=>{st.v=v;render()};
+window.pick=(k,i)=>{st[k]=i;render()};
 window.addCart=async()=>{
  const o=OUT[st.o],i=IN[st.i],id='tote-'+o.n+'-'+i.n;
- const variants=[{g:OL,n:o.n,h:o.h},{g:IL,n:i.n,h:i.h}];
+ const variants=[{g:OL,n:o.n,h:o.h,id:o.id||''},{g:IL,n:i.n,h:i.h,id:i.id||''}];
  try{const c=await getCart(user.uid),f=c.find(x=>x.id===id);
   f?f.q++:c.push({id,pid:'tote',name:P.name,price:P.price,q:1,sel:true,variants});
   await saveCart(user.uid,c);setBadge(cartTotalQty(c));toast('Added to your cart')}
@@ -42,7 +42,7 @@ window.addCart=async()=>{
 };
 const head=t=>`<header><button class="back" onclick="location.href='category.html?c=${esc(P?P.category:'')}'" aria-label="Back">${BACK}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
 function render(){
- document.getElementById('root').innerHTML=head(P.name)+`<main><div class="wrap"><div><div id="pv">${bag()}</div><div class="seg"><button class="sg ${st.v==='out'?'on':''}" onclick="setView('out')">${esc(OL)}</button><button class="sg ${st.v==='in'?'on':''}" onclick="setView('in')">${esc(IL)}</button></div></div>
+ document.getElementById('root').innerHTML=head(P.name)+`<main><div class="wrap"><div class="frame"><div class="half"><div class="pane">${pane('out')}</div><div class="cap2">${esc(OL)}</div></div><div class="half"><div class="pane">${pane('in')}</div><div class="cap2">${esc(IL)}</div></div></div>
 <div class="opts">${fixedOut?'':`<h3>${esc(OL)} color</h3><p class="mut">The crochet side: ${esc(OUT[st.o].n)}</p>${sws('o',OUT)}`}${fixedIn?'':`<h3>${esc(IL)} color</h3><p class="mut">The waterproof side: ${esc(IN[st.i].n)}</p>${sws('i',IN)}`}
 <div class="sum"><b>Your design</b><br>${esc(OUT[st.o].n)} crochet ${esc(OL.toLowerCase())}, ${esc(IN[st.i].n)} waterproof ${esc(IL.toLowerCase())}</div><div class="desc">${esc(P.description||'')}</div></div></div></main>
 <div class="bar"><div class="pp">Price<b>${peso(P.price)}</b></div><button class="btn" onclick="addCart()">Add to cart</button></div>`}
@@ -51,9 +51,10 @@ gate(async u=>{
  document.getElementById('root').innerHTML=head('Loading...')+'<main><p class="mut">Loading...</p></main>';
  initBadge(u.uid);
  P=await getProduct('tote');
- if(!P){P=null;document.getElementById('root').innerHTML=head('Not available')+'<main><div class="empty"><h2>This product is not available right now</h2><p><a href="shop.html">Back to the shop</a></p></div></main>';return}
+ if(!P){document.getElementById('root').innerHTML=head('Not available')+'<main><div class="empty"><h2>This product is not available right now</h2><p><a href="shop.html">Back to the shop</a></p></div></main>';return}
+ photos=await loadColorPhotos('tote');
  const og=(P.options||[]);const a=og[0]&&og[0].colors&&og[0].colors.length?og[0]:null,b=og[1]&&og[1].colors&&og[1].colors.length?og[1]:null;
- OUT=a?a.colors:[{n:'Natural',h:'#f2e6d0'}];IN=b?b.colors:[{n:'Standard',h:'#9db39a'}];
+ OUT=a?a.colors:[{n:'Natural',h:'#f2e6d0',id:''}];IN=b?b.colors:[{n:'Standard',h:'#9db39a',id:''}];
  OL=(og[0]&&og[0].label)||'Outside';IL=(og[1]&&og[1].label)||'Inside';fixedOut=!a;fixedIn=!b;
  render();
 });
