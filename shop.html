@@ -8,20 +8,17 @@
 </head>
 <body><div id="root"></div>
 <script type="module">
-import {gate,signOutUser,isAdmin,cartBtn,initBadge,esc,LOGO,TOTE_IMG} from './app.js';
-const CATS=[
- {id:'bags',n:'Bags',d:'Totes and reversible bags',img:TOTE_IMG},
- {id:'keychains',n:'Keychains',d:'Cute crochet charms',c:'#e8b4b0'},
- {id:'hairclips',n:'Hair Clips',d:'Handmade hair accessories',c:'#e2b95a'},
- {id:'plushies',n:'Plushies',d:'Soft crochet friends',c:'#9fb3d1'}];
-window.go=id=>location.href='category.html?c='+id;
+import {gate,signOutUser,isAdmin,cartBtn,initBadge,esc,LOGO,loadCategories,getLoadError} from './app.js';
+const TINTS=['#e8b4b0','#e2b95a','#9fb3d1','#9db39a','#c8b6e2','#f7c59f'];
+window.go=id=>location.href='category.html?c='+encodeURIComponent(id);
 window.out=()=>signOutUser().then(()=>location.href='index.html');
-gate(user=>{
+gate(async user=>{
  const first=esc(user.name.split(' ')[0]);
  document.getElementById('root').innerHTML=`<header><img class="logo" src="${LOGO}" alt="Warm Knots logo"><span class="brand">Warm Knots</span>${cartBtn()}<span class="user">${user.pic?`<img class="av" src="${esc(user.pic)}" alt="" referrerpolicy="no-referrer">`:`<span class="av">${esc(user.name[0].toUpperCase())}</span>`}<span class="nm">${first}</span><button class="lnk" onclick="out()">Sign out</button></span></header>
-<main><h1>What are we hooking you up with today?</h1><p class="sub">Hi, ${first}! Everything here is handmade with love, one loop at a time. Pick a category and get cozy.</p>
-<div class="grid cats">${CATS.map(c=>`<button class="cat" onclick="go('${c.id}')">${c.img?`<img class="pic" src="${c.img}" alt="${c.n}">`:`<div class="tile" style="background:repeating-linear-gradient(135deg,${c.c},${c.c} 7px,rgba(0,0,0,.07) 7px,rgba(0,0,0,.07) 14px)">Photo coming soon</div>`}<div class="cap"><b>${c.n}</b><span>${c.d}</span></div></button>`).join('')}</div></main>
+<main><h1>What are we hooking you up with today?</h1><p class="sub">Hi, ${first}! Everything here is handmade with love, one loop at a time. Pick a category and get cozy.</p><div id="cats"><p class="mut">Loading...</p></div></main>
 <footer><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a>${isAdmin(user)?' · <a href="admin.html">Owner panel</a>':''}</footer>`;
  initBadge(user.uid);
+ const cats=await loadCategories(),err=getLoadError();
+ document.getElementById('cats').innerHTML=(cats.length?`<div class="grid cats">${cats.map((c,i)=>`<button class="cat" onclick="go('${esc(c.id)}')">${c.image?`<img class="pic" src="${c.image}" alt="${esc(c.name)}">`:`<div class="tile" style="background:repeating-linear-gradient(135deg,${TINTS[i%6]},${TINTS[i%6]} 7px,rgba(0,0,0,.07) 7px,rgba(0,0,0,.07) 14px)">Photo coming soon</div>`}<div class="cap"><b>${esc(c.name)}</b></div></button>`).join('')}</div>`:'<div class="empty"><h2>Categories are coming soon</h2><p>We are getting the shop ready.</p></div>')+(err?`<p class="mut" style="margin-top:16px;text-align:center">Some items could not be loaded (${esc(err)}).</p>`:'');
 });
 </script></body></html>
