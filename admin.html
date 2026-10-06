@@ -59,11 +59,11 @@ window.setTab=t=>{sync();tab=t;render()};
 window.onFile=async(inp,which)=>{const f=inp.files[0];if(!f)return;
  try{const d=await resizeImage(f,which==='c'?700:800);(which==='c'?cf:pf).image=d;const p=$(which+'prev');p.src=d;p.style.display='block'}catch(e){toast('Could not use that photo. Try a different one.')}};
 // ---- products ----
-window.editP=id=>{sync();const p=list.find(x=>x.id===id);const gs=(p.options&&p.options.length)?JSON.parse(JSON.stringify(p.options)):[{label:'Color',colors:[]}];
+window.editP=id=>{const p=list.find(x=>x.id===id);const gs=(p.options&&p.options.length)?JSON.parse(JSON.stringify(p.options)):[{label:'Color',colors:[]}];
  pf={id:p.id,name:p.name||'',category:p.category||'',price:p.price||'',description:p.description||'',soldOut:!!p.soldOut,image:p.image||'',useColors:gs.some(g=>g.colors.length),groups:gs,createdAt:p.createdAt||0,designer:!!p.designer};
  tab='products';render();window.scrollTo(0,0)};
 window.cancelP=()=>{pf=newPF();render()};
-window.delP=async id=>{const p=list.find(x=>x.id===id);if(!confirm('Delete "'+p.name+'"? This cannot be undone.'))return;
+window.delP=async id=>{sync();const p=list.find(x=>x.id===id);if(!confirm('Delete "'+p.name+'"? This cannot be undone.'))return;
  try{await deleteProduct(id);toast('Deleted');list=await loadProducts();if(pf.id===id)pf=newPF();render()}catch(e){toast('Could not delete: '+(e.code||e.message))}};
 window.togColor=(gi,pi)=>{sync();const g=pf.groups[gi],c=PALETTE[pi],k=g.colors.findIndex(x=>same(x,c));k>=0?g.colors.splice(k,1):g.colors.push({n:c.n,h:c.h});render()};
 window.addCustom=gi=>{sync();const n=$('cn'+gi).value.trim()||'Custom',h=$('ch'+gi).value;const g=pf.groups[gi];if(!g.colors.some(x=>same(x,{h})))g.colors.push({n,h});render()};
@@ -85,9 +85,9 @@ window.saveP=async()=>{
  catch(e){toast('Could not save: '+(e.code||e.message));$('sv').disabled=false}
 };
 // ---- categories ----
-window.editC=id=>{sync();const c=cats.find(x=>x.id===id);cf={id:c.id,name:c.name||'',image:c.image||'',createdAt:c.createdAt||0};tab='cats';render();window.scrollTo(0,0)};
+window.editC=id=>{const c=cats.find(x=>x.id===id);cf={id:c.id,name:c.name||'',image:c.image||'',createdAt:c.createdAt||0};tab='cats';render();window.scrollTo(0,0)};
 window.cancelC=()=>{cf=newCF();render()};
-window.delC=async id=>{const c=cats.find(x=>x.id===id),n=list.filter(p=>p.category===id).length;
+window.delC=async id=>{sync();const c=cats.find(x=>x.id===id),n=list.filter(p=>p.category===id).length;
  if(!confirm('Delete the category "'+c.name+'"?'+(n?'\n\n'+n+' product(s) in it will be hidden from the shop until you move them to another category.':'')))return;
  try{await deleteCategory(id);toast('Deleted');cats=await loadCategories();if(cf.id===id)cf=newCF();render()}catch(e){toast('Could not delete: '+(e.code||e.message))}};
 window.saveC=async()=>{
@@ -127,7 +127,6 @@ function catsView(){
 }
 window.sync=sync;window.render=()=>render();
 function render(){
- sync();
  const top=right=>`<header><button class="back" onclick="location.href='shop.html'" aria-label="Back to shop">${BACK}</button><span class="ttl">Owner panel</span>${right||''}</header>`;
  if(!user){root.innerHTML=top()+`<div class="center"><p class="mut">This page is only for the shop owner.</p><button class="btn" onclick="login()">Sign in with Google</button></div>`;return}
  if(!isAdmin(user)){root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+`<div class="center"><h2>Access denied</h2><p class="mut">This page is only for the shop owner. You are signed in as ${esc(user.email)}.</p></div>`;return}
