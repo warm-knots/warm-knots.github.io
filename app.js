@@ -42,9 +42,12 @@ export function gate(cb){onUser(u=>{if(!u){location.replace('index.html');return
 
 // ---- products ----
 const defaultTote=()=>({id:'tote',name:'Reversible Tote Bag',category:'bags',price:DEFAULT_TOTE_PRICE,image:TOTE_IMG,designer:true,description:''});
+let loadErr='';
+export const getLoadError=()=>loadErr;
 export async function loadProducts(){
- const s=await getDocs(collection(db,'products'));
- const list=s.docs.map(d=>({id:d.id,...d.data()}));
+ let list=[];loadErr='';
+ try{const s=await getDocs(collection(db,'products'));list=s.docs.map(d=>({id:d.id,...d.data()}))}
+ catch(e){loadErr=e.code||e.message||'unknown error'}
  let t=list.find(p=>p.id==='tote');
  if(!t){list.push(defaultTote())}else{if(!t.image)t.image=TOTE_IMG;if(!t.price)t.price=DEFAULT_TOTE_PRICE;t.designer=true}
  return list.sort((a,b)=>(a.id==='tote'?-1:b.id==='tote'?1:(b.createdAt||0)-(a.createdAt||0)));
