@@ -13,55 +13,125 @@ label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
 input[type=text],input[type=number],select,textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif}
 textarea{min-height:90px;resize:vertical}
 .chk{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:15px;color:var(--fg)}.chk input{width:18px;height:18px;accent-color:var(--acc)}
-#prev{width:140px;aspect-ratio:4/5;object-fit:cover;border-radius:10px;border:1px solid var(--bd);margin-top:8px;display:none}
+.prev{width:140px;aspect-ratio:4/5;object-fit:cover;border-radius:10px;border:1px solid var(--bd);margin-top:8px}
 .acts{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.tabs{display:flex;margin-bottom:18px}.tabs button{flex:1;border:1px solid var(--bd);background:#fff;color:var(--fg);padding:10px 0;font:600 15px system-ui,sans-serif;cursor:pointer}
+.tabs button:first-child{border-radius:10px 0 0 10px}.tabs button:last-child{border-radius:0 10px 10px 0}.tabs .on{background:var(--acc);color:#fff;border-color:var(--acc)}
 .pr{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--bd)}.pr:first-of-type{border-top:0}
-.pr img{width:56px;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--bd);flex:none}
+.pr img,.pr .ph{width:56px;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--bd);flex:none;background:#f3ebdf}
 .pr .t{flex:1;min-width:0}.pr .t b{display:block;font:600 15px Georgia,serif}.pr .t span{font-size:12px;color:var(--mut)}
 .sm{padding:6px 14px;font-size:13px}.dng{border-color:#b3261e;color:#b3261e}
 .center{max-width:420px;margin:40px auto;text-align:center}
+.grp{border:1px dashed var(--bd);border-radius:12px;padding:12px;margin-top:12px;background:var(--bg)}
+.pal{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.pc{width:30px;height:30px;border-radius:50%;border:1px solid #cdbfae;padding:0;cursor:pointer;position:relative}
+.pc.on{outline:3px solid var(--acc);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--bd);border-radius:999px;padding:3px 6px 3px 8px}
+.chip i{width:16px;height:16px;border-radius:50%;border:1px solid #cdbfae;display:inline-block}
+.chip input{width:90px;border:0;background:transparent;font:13px system-ui,sans-serif;padding:2px;color:var(--fg)}
+.chip button{background:none;border:0;cursor:pointer;color:var(--mut);font-size:16px;padding:0 4px}
+.cust{display:flex;gap:8px;align-items:center;margin-top:8px}.cust input[type=color]{width:44px;height:38px;padding:2px;border:1px solid var(--bd);border-radius:8px;background:#fff}
 </style></head>
 <body><div id="root"></div>
 <script type="module">
-import {getLoadError,onUser,signIn,signOutUser,isAdmin,loadProducts,saveProduct,deleteProduct,resizeImage,esc,peso,toast,BACK,CATS,TOTE_IMG,ADMIN_EMAIL} from './app.js';
-let user=null,list=[],ed=null,img='',loading=true;
+import {getLoadError,onUser,signIn,signOutUser,isAdmin,loadProducts,loadCategories,saveProduct,deleteProduct,saveCategory,deleteCategory,isSeeded,seedAll,resizeImage,esc,peso,toast,BACK,PALETTE} from './app.js';
+let user=null,cats=[],list=[],tab='products',pf=null,cf=null,loading=true;
 const $=id=>document.getElementById(id),root=$('root');
+const newPF=()=>({id:'',name:'',category:cats[0]?cats[0].id:'',price:'',description:'',soldOut:false,image:'',useColors:false,groups:[{label:'Color',colors:[]}],createdAt:0,designer:false});
+const newCF=()=>({id:'',name:'',image:'',createdAt:0});
+const same=(a,b)=>a.h.toLowerCase()===b.h.toLowerCase();
 window.out=()=>signOutUser().then(()=>render());
 window.login=async()=>{try{await signIn()}catch(e){const c=e.code||'';if(c!=='auth/popup-closed-by-user'&&c!=='auth/cancelled-popup-request')toast('Sign-in failed. Please try again.')}};
-async function refresh(){try{list=await loadProducts()}catch(e){toast('Could not load products: '+(e.code||e.message))}if(getLoadError())toast('Could not load products: '+getLoadError());loading=false}
+async function refresh(){
+ try{if(!(await isSeeded()))await seedAll()}catch(e){toast('Could not set up your shop data: '+(e.code||e.message))}
+ cats=await loadCategories();list=await loadProducts();
+ if(getLoadError())toast('Could not load everything: '+getLoadError());
+ if(!pf)pf=newPF();if(!cf)cf=newCF();loading=false;
+}
 onUser(async u=>{user=u;if(isAdmin(u))await refresh();render()});
-window.onFile=async inp=>{const f=inp.files[0];if(!f)return;try{img=await resizeImage(f);const p=$('prev');p.src=img;p.style.display='block'}catch(e){toast('Could not use that photo. Try a different one.')}};
-window.edit=id=>{ed=list.find(p=>p.id===id);img=ed.image||'';render();window.scrollTo(0,0)};
-window.cancel=()=>{ed=null;img='';render()};
-window.del=async id=>{const p=list.find(x=>x.id===id);if(!confirm('Delete "'+p.name+'"? This cannot be undone.'))return;
- try{await deleteProduct(id);toast('Deleted');await refresh();render()}catch(e){toast('Could not delete: '+(e.code||e.message))}};
-window.save=async()=>{
- const name=$('f_n').value.trim();if(!name)return toast('Please enter a product name');
- const isTote=ed&&ed.id==='tote';
- if(!img)return toast('Please add a photo');
- const p={id:ed?ed.id:'p'+Date.now(),name,category:isTote?'bags':$('f_c').value,price:Number($('f_p').value)||0,description:$('f_d').value.trim(),image:isTote&&img===TOTE_IMG?'':img,soldOut:$('f_s').checked,createdAt:(ed&&ed.createdAt)||Date.now()};
- if(isTote)p.designer=true;
+// keep what is typed before redrawing the page
+function sync(){
+ if(tab==='products'&&pf&&$('f_n')){pf.name=$('f_n').value;pf.category=$('f_c').value;pf.price=$('f_p').value;pf.description=$('f_d').value;pf.soldOut=$('f_s').checked;pf.useColors=$('f_u').checked;pf.groups.forEach((g,i)=>{const e=$('gl'+i);if(e)g.label=e.value})}
+ if(tab==='cats'&&cf&&$('c_n'))cf.name=$('c_n').value;
+}
+window.setTab=t=>{sync();tab=t;render()};
+window.onFile=async(inp,which)=>{const f=inp.files[0];if(!f)return;
+ try{const d=await resizeImage(f,which==='c'?700:800);(which==='c'?cf:pf).image=d;const p=$(which+'prev');p.src=d;p.style.display='block'}catch(e){toast('Could not use that photo. Try a different one.')}};
+// ---- products ----
+window.editP=id=>{sync();const p=list.find(x=>x.id===id);const gs=(p.options&&p.options.length)?JSON.parse(JSON.stringify(p.options)):[{label:'Color',colors:[]}];
+ pf={id:p.id,name:p.name||'',category:p.category||'',price:p.price||'',description:p.description||'',soldOut:!!p.soldOut,image:p.image||'',useColors:gs.some(g=>g.colors.length),groups:gs,createdAt:p.createdAt||0,designer:!!p.designer};
+ tab='products';render();window.scrollTo(0,0)};
+window.cancelP=()=>{pf=newPF();render()};
+window.delP=async id=>{const p=list.find(x=>x.id===id);if(!confirm('Delete "'+p.name+'"? This cannot be undone.'))return;
+ try{await deleteProduct(id);toast('Deleted');list=await loadProducts();if(pf.id===id)pf=newPF();render()}catch(e){toast('Could not delete: '+(e.code||e.message))}};
+window.togColor=(gi,pi)=>{sync();const g=pf.groups[gi],c=PALETTE[pi],k=g.colors.findIndex(x=>same(x,c));k>=0?g.colors.splice(k,1):g.colors.push({n:c.n,h:c.h});render()};
+window.addCustom=gi=>{sync();const n=$('cn'+gi).value.trim()||'Custom',h=$('ch'+gi).value;const g=pf.groups[gi];if(!g.colors.some(x=>same(x,{h})))g.colors.push({n,h});render()};
+window.rmColor=(gi,ci)=>{sync();pf.groups[gi].colors.splice(ci,1);render()};
+window.nameColor=(gi,ci,v)=>{pf.groups[gi].colors[ci].n=v.trim()||'Color'};
+window.addGroup=()=>{sync();pf.groups.push({label:'',colors:[]});render()};
+window.rmGroup=gi=>{sync();pf.groups.splice(gi,1);if(!pf.groups.length)pf.groups=[{label:'Color',colors:[]}];render()};
+window.presetBag=()=>{sync();pf.groups=[{label:'Outside',colors:[]},{label:'Inside',colors:[]}];pf.useColors=true;render()};
+window.saveP=async()=>{
+ sync();const name=pf.name.trim();
+ if(!name)return toast('Please enter a product name');
+ if(!pf.image)return toast('Please add a photo');
+ if(!pf.category)return toast('Please choose a category (add one in the Categories tab first)');
+ const options=pf.useColors?pf.groups.map(g=>({label:(g.label||'').trim()||'Color',colors:g.colors})).filter(g=>g.colors.length):[];
+ const p={id:pf.id||'p'+Date.now(),name,category:pf.category,price:Number(pf.price)||0,description:pf.description.trim(),image:pf.image,soldOut:pf.soldOut,options,createdAt:pf.createdAt||Date.now()};
+ if(pf.designer)p.designer=true;
  $('sv').disabled=true;
- try{await saveProduct(p);toast('Saved!');ed=null;img='';await refresh();render();window.scrollTo(0,0)}
+ try{await saveProduct(p);toast('Saved!');list=await loadProducts();pf=newPF();render();window.scrollTo(0,0)}
  catch(e){toast('Could not save: '+(e.code||e.message));$('sv').disabled=false}
 };
-function view(){
- const isTote=ed&&ed.id==='tote';
- return `<main style="padding-bottom:40px">
-<div class="card"><h2>${ed?'Edit product':'Add a product'}</h2>
-<label>Photo</label><input type="file" accept="image/*" onchange="onFile(this)"><img id="prev" alt="Photo preview" src="${esc(img)}" style="display:${img?'block':'none'}">
-<label>Name</label><input type="text" id="f_n" value="${esc(ed?ed.name:'')}" placeholder="e.g. Bear keychain">
-<label>Category</label><select id="f_c" ${isTote?'disabled':''}>${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${(ed?ed.category:'keychains')===k?'selected':''}>${v}</option>`).join('')}</select>
-<label>Price (pesos)</label><input type="number" id="f_p" min="0" step="1" inputmode="numeric" value="${ed&&ed.price?ed.price:''}" placeholder="e.g. 120">
-<label>Description and other details</label><textarea id="f_d" placeholder="Size, materials, colors, care...">${esc(ed?ed.description||'':'')}</textarea>
-<label class="chk"><input type="checkbox" id="f_s" ${ed&&ed.soldOut?'checked':''}> Mark as sold out</label>
-<div class="acts"><button class="btn" id="sv" onclick="save()">${ed?'Save changes':'Add product'}</button>${ed?'<button class="btn alt" onclick="cancel()">Cancel</button>':''}</div></div>
-<div class="card"><h2>Your products (${list.length})</h2>${loading?'<p class="mut">Loading...</p>':list.map(p=>`<div class="pr"><img src="${p.image}" alt=""><div class="t"><b>${esc(p.name)}</b><span>${esc(CATS[p.category]||'')}${p.designer?'':' · '+peso(p.price)}${p.soldOut?' · Sold out':''}${p.designer?' · Tote designer (price '+peso(p.price)+')':''}</span></div><button class="btn alt sm" onclick="edit('${esc(p.id)}')">Edit</button>${p.designer?'':`<button class="btn alt sm dng" onclick="del('${esc(p.id)}')">Delete</button>`}</div>`).join('')}</div></main>`;
+// ---- categories ----
+window.editC=id=>{sync();const c=cats.find(x=>x.id===id);cf={id:c.id,name:c.name||'',image:c.image||'',createdAt:c.createdAt||0};tab='cats';render();window.scrollTo(0,0)};
+window.cancelC=()=>{cf=newCF();render()};
+window.delC=async id=>{const c=cats.find(x=>x.id===id),n=list.filter(p=>p.category===id).length;
+ if(!confirm('Delete the category "'+c.name+'"?'+(n?'\n\n'+n+' product(s) in it will be hidden from the shop until you move them to another category.':'')))return;
+ try{await deleteCategory(id);toast('Deleted');cats=await loadCategories();if(cf.id===id)cf=newCF();render()}catch(e){toast('Could not delete: '+(e.code||e.message))}};
+window.saveC=async()=>{
+ sync();const name=cf.name.trim();if(!name)return toast('Please enter a category name');
+ const c={id:cf.id||'c'+Date.now(),name,image:cf.image||'',createdAt:cf.createdAt||Date.now()};
+ $('cv').disabled=true;
+ try{await saveCategory(c);toast('Saved!');cats=await loadCategories();cf=newCF();render();window.scrollTo(0,0)}
+ catch(e){toast('Could not save: '+(e.code||e.message));$('cv').disabled=false}
+};
+// ---- screens ----
+function groupHtml(g,gi){
+ return `<div class="grp"><label style="margin-top:0">Group name (what customers see, e.g. Outside, Inside, Color)</label><input type="text" id="gl${gi}" value="${esc(g.label)}" placeholder="e.g. Outside">
+<label>Tap colors to offer</label><div class="pal">${PALETTE.map((c,pi)=>`<button class="pc ${g.colors.some(x=>same(x,c))?'on':''}" style="background:${c.h}" title="${esc(c.n)}" aria-label="${esc(c.n)}" onclick="togColor(${gi},${pi})"></button>`).join('')}</div>
+<label>Or add your own color</label><div class="cust"><input type="color" id="ch${gi}" value="#c8553d"><input type="text" id="cn${gi}" placeholder="Color name"><button class="btn alt sm" onclick="addCustom(${gi})">Add</button></div>
+<div class="chips">${g.colors.length?g.colors.map((c,ci)=>`<span class="chip"><i style="background:${c.h}"></i><input type="text" value="${esc(c.n)}" onchange="nameColor(${gi},${ci},this.value)" aria-label="Color name"><button onclick="rmColor(${gi},${ci})" aria-label="Remove color">&times;</button></span>`).join(''):'<span class="mut">No colors chosen yet.</span>'}</div>
+${pf.groups.length>1?`<div class="acts"><button class="btn alt sm dng" onclick="rmGroup(${gi})">Remove this group</button></div>`:''}</div>`;
 }
+function productsView(){
+ const colorsUI=pf.useColors?`${pf.groups.map(groupHtml).join('')}<div class="acts"><button class="btn alt sm" onclick="addGroup()">Add another color group</button><button class="btn alt sm" onclick="presetBag()">Set up Outside + Inside (for bags)</button></div>`:'';
+ return `<div class="card"><h2>${pf.id?'Edit product':'Add a product'}</h2>
+<label>Photo</label><input type="file" accept="image/*" onchange="onFile(this,'p')"><img id="pprev" class="prev" alt="Photo preview" src="${esc(pf.image)}" style="display:${pf.image?'block':'none'}">
+<label>Name</label><input type="text" id="f_n" value="${esc(pf.name)}" placeholder="e.g. Bear keychain">
+<label>Category</label><select id="f_c">${pf.category&&cats.some(c=>c.id===pf.category)?'':'<option value="">Choose a category</option>'}${cats.map(c=>`<option value="${esc(c.id)}" ${pf.category===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>
+<label>Price (pesos)</label><input type="number" id="f_p" min="0" step="1" inputmode="numeric" value="${esc(pf.price)}" placeholder="e.g. 120">
+<label>Description and other details</label><textarea id="f_d" placeholder="Size, materials, care...">${esc(pf.description)}</textarea>
+<label class="chk"><input type="checkbox" id="f_s" ${pf.soldOut?'checked':''}> Mark as sold out</label>
+<label class="chk"><input type="checkbox" id="f_u" ${pf.useColors?'checked':''} onchange="sync();render()"> Let customers choose colors</label>${colorsUI}
+<div class="acts"><button class="btn" id="sv" onclick="saveP()">${pf.id?'Save changes':'Add product'}</button>${pf.id?'<button class="btn alt" onclick="cancelP()">Cancel</button>':''}</div></div>
+<div class="card"><h2>Your products (${list.length})</h2>${list.map(p=>{const c=cats.find(x=>x.id===p.category),n=(p.options||[]).reduce((s,g)=>s+(g.colors||[]).length,0);return `<div class="pr"><img src="${p.image}" alt=""><div class="t"><b>${esc(p.name)}</b><span>${esc(c?c.name:'No category (hidden)')} · ${peso(p.price)}${p.soldOut?' · Sold out':''}${n?' · '+n+' color choices':''}</span></div><button class="btn alt sm" onclick="editP('${esc(p.id)}')">Edit</button><button class="btn alt sm dng" onclick="delP('${esc(p.id)}')">Delete</button></div>`}).join('')||'<p class="mut">No products yet.</p>'}</div>`;
+}
+function catsView(){
+ return `<div class="card"><h2>${cf.id?'Edit category':'Add a category'}</h2>
+<label>Picture</label><input type="file" accept="image/*" onchange="onFile(this,'c')"><img id="cprev" class="prev" alt="Picture preview" src="${esc(cf.image)}" style="display:${cf.image?'block':'none'}">
+<label>Name</label><input type="text" id="c_n" value="${esc(cf.name)}" placeholder="e.g. Scrunchies">
+<div class="acts"><button class="btn" id="cv" onclick="saveC()">${cf.id?'Save changes':'Add category'}</button>${cf.id?'<button class="btn alt" onclick="cancelC()">Cancel</button>':''}</div></div>
+<div class="card"><h2>Your categories (${cats.length})</h2>${cats.map(c=>`<div class="pr">${c.image?`<img src="${c.image}" alt="">`:'<div class="ph"></div>'}<div class="t"><b>${esc(c.name)}</b><span>${list.filter(p=>p.category===c.id).length} products</span></div><button class="btn alt sm" onclick="editC('${esc(c.id)}')">Edit</button><button class="btn alt sm dng" onclick="delC('${esc(c.id)}')">Delete</button></div>`).join('')||'<p class="mut">No categories yet.</p>'}</div>`;
+}
+window.sync=sync;window.render=()=>render();
 function render(){
- const top=(right)=>`<header><button class="back" onclick="location.href='shop.html'" aria-label="Back to shop">${BACK}</button><span class="ttl">Owner panel</span>${right||''}</header>`;
+ sync();
+ const top=right=>`<header><button class="back" onclick="location.href='shop.html'" aria-label="Back to shop">${BACK}</button><span class="ttl">Owner panel</span>${right||''}</header>`;
  if(!user){root.innerHTML=top()+`<div class="center"><p class="mut">This page is only for the shop owner.</p><button class="btn" onclick="login()">Sign in with Google</button></div>`;return}
  if(!isAdmin(user)){root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+`<div class="center"><h2>Access denied</h2><p class="mut">This page is only for the shop owner. You are signed in as ${esc(user.email)}.</p></div>`;return}
- root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+view();
+ if(loading){root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+'<main><p class="mut">Loading your shop...</p></main>';return}
+ root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+`<main style="padding-bottom:40px"><div class="tabs"><button class="${tab==='products'?'on':''}" onclick="setTab('products')">Products</button><button class="${tab==='cats'?'on':''}" onclick="setTab('cats')">Categories</button></div>${tab==='products'?productsView():catsView()}</main>`;
 }
 </script></body></html>
