@@ -10,29 +10,36 @@
 @media(min-width:720px){.pw{grid-template-columns:1fr 1fr;align-items:start}}
 .big{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:16px;border:1px solid var(--bd);display:block}
 .info h2{font-size:24px;margin:0 0 6px}.price{color:var(--acc);font:600 22px system-ui,sans-serif;margin-bottom:12px}
-.desc{white-space:pre-line;font-size:16px}.sold{display:inline-block;background:#3a2e2a;color:#fff;font:600 12px system-ui,sans-serif;border-radius:999px;padding:3px 12px;margin-bottom:10px}
+.desc{white-space:pre-line;font-size:16px;margin-top:14px}.sold{display:inline-block;background:#3a2e2a;color:#fff;font:600 12px system-ui,sans-serif;border-radius:999px;padding:3px 12px;margin-bottom:10px}
+.opt{font-family:system-ui,sans-serif;margin-top:14px}.opt h3{font-size:15px;margin:0 0 2px}.opt .mut{margin:0 0 8px}
+.sw{width:38px;height:38px;border-radius:50%;border:1px solid #cdbfae;padding:0;margin:0 8px 8px 0;cursor:pointer}.sw.on{outline:3px solid var(--acc);outline-offset:2px}
 .bar .pp{flex:1;font-size:13px;color:var(--mut)}.bar .pp b{display:block;font-size:20px;color:var(--fg)}
 </style></head>
 <body class="hasbar"><div id="root"></div>
 <script type="module">
-import {gate,getProduct,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,esc,peso,BACK,CATS,toast} from './app.js';
+import {gate,getProduct,loadCategories,colorGroups,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,esc,peso,BACK,toast} from './app.js';
 const id=new URLSearchParams(location.search).get('id');
-let user=null,p=null;
+let user=null,p=null,groups=[],pick=[];
+const swatches=()=>groups.map((g,gi)=>`<div class="opt"><h3>${esc(g.label||'Color')}</h3><p class="mut">${esc(g.colors[pick[gi]].n)}</p>${g.colors.map((c,ci)=>`<button class="sw ${pick[gi]===ci?'on':''}" style="background:${c.h}" aria-label="${esc(c.n)}" onclick="choose(${gi},${ci})"></button>`).join('')}</div>`).join('');
+window.choose=(gi,ci)=>{pick[gi]=ci;document.getElementById('opts').innerHTML=swatches()};
 window.addCart=async()=>{
- try{const c=await getCart(user.uid),cid='p-'+p.id,f=c.find(x=>x.id===cid);
-  f?f.q++:c.push({id:cid,pid:p.id,name:p.name,price:p.price,q:1,sel:true});
+ const variants=groups.map((g,gi)=>({g:g.label||'Color',n:g.colors[pick[gi]].n,h:g.colors[pick[gi]].h}));
+ const cid='p-'+p.id+variants.map(v=>'-'+v.n).join('');
+ try{const c=await getCart(user.uid),f=c.find(x=>x.id===cid);
+  f?f.q++:c.push({id:cid,pid:p.id,name:p.name,price:p.price,q:1,sel:true,variants});
   await saveCart(user.uid,c);setBadge(cartTotalQty(c));toast('Added to your cart')}
  catch(e){toast('Could not add to cart. Please try again.')}
 };
 gate(async u=>{
- user=u;
- const root=document.getElementById('root');
+ user=u;const root=document.getElementById('root');
  root.innerHTML=`<header><button class="back" onclick="history.length>1?history.back():location.href='shop.html'" aria-label="Back">${BACK}</button><span class="ttl">Details</span>${cartBtn()}</header><main><p class="mut">Loading...</p></main>`;
  initBadge(u.uid);
- try{p=id?await getProduct(id):null}catch(e){p=null}
+ p=id?await getProduct(id):null;
  if(!p){document.querySelector('main').innerHTML='<div class="empty"><h2>We could not find that product</h2><p><a href="shop.html">Back to the shop</a></p></div>';return}
  if(p.designer){location.replace('tote.html');return}
- document.querySelector('main').innerHTML=`<div class="pw"><img class="big" src="${p.image}" alt="${esc(p.name)}"><div class="info">${p.soldOut?'<span class="sold">Sold out</span>':''}<h2>${esc(p.name)}</h2><div class="price">${peso(p.price)}</div><div class="mut" style="margin-bottom:10px">${esc(CATS[p.category]||'')}</div><div class="desc">${esc(p.description||'')}</div></div></div>`;
+ groups=colorGroups(p);pick=groups.map(()=>0);
+ const cats=await loadCategories(),cat=cats.find(c=>c.id===p.category);
+ document.querySelector('main').innerHTML=`<div class="pw"><img class="big" src="${p.image}" alt="${esc(p.name)}"><div class="info">${p.soldOut?'<span class="sold">Sold out</span>':''}<h2>${esc(p.name)}</h2><div class="price">${peso(p.price)}</div><div class="mut">${esc(cat?cat.name:'')}</div><div id="opts">${swatches()}</div><div class="desc">${esc(p.description||'')}</div></div></div>`;
  root.insertAdjacentHTML('beforeend',`<div class="bar"><div class="pp">Price<b>${peso(p.price)}</b></div><button class="btn" ${p.soldOut?'disabled':''} onclick="addCart()">${p.soldOut?'Sold out':'Add to cart'}</button></div>`);
 });
 </script></body></html>
