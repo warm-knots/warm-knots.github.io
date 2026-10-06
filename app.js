@@ -24,6 +24,7 @@ export const shade=(h,a)=>{const n=parseInt(h.slice(1),16);return '#'+[16,8,0].m
 export function toast(m){let t=document.getElementById('toast');if(!t){t=document.createElement('div');t.id='toast';document.body.appendChild(t)}
  t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3200)}
 export const BACK='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+export const HOME='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1v-9.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
 const CARTSVG='<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M6 8h12l1 12H5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 8V7a3 3 0 0 1 6 0v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 let cnt=0;
 export const cartBtn=()=>`<button class="cartbtn" onclick="location.href='cart.html'" aria-label="Cart">${CARTSVG}${cnt?`<b>${cnt}</b>`:''}</button>`;
