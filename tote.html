@@ -4,15 +4,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Reversible Tote Bag | Warm Knots</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap">
+<link rel="stylesheet" href="style.css">
 <style>
-:root{color-scheme:only light;--bg:#fbf6ef;--fg:#3a2e2a;--card:#fff;--mut:#8a7a70;--acc:#c8553d;--bd:#eadfd2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:Georgia,'Times New Roman',serif;line-height:1.5}
-header{display:flex;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bd)}
-.back{background:none;border:0;color:var(--fg);cursor:pointer;padding:4px;display:flex}
-.ttl{font-family:'Pacifico','Brush Script MT',cursive;color:var(--acc);font-size:clamp(20px,5.5vw,26px);white-space:nowrap}
-main{max-width:860px;margin:0 auto;padding:22px 16px 110px}
-#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font:14px system-ui,sans-serif;display:none;max-width:90%;z-index:9}
-.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--bd);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:12px;font-family:system-ui,sans-serif;z-index:5}
 .wrap{display:grid;grid-template-columns:1fr;gap:18px}
 @media(min-width:720px){.wrap{grid-template-columns:1fr 1fr;align-items:start}}
 #pv{background:#f3ebdf;border-radius:16px;height:clamp(230px,60vw,330px);display:flex;align-items:center;justify-content:center;border:1px solid var(--bd)}
@@ -20,53 +13,38 @@ main{max-width:860px;margin:0 auto;padding:22px 16px 110px}
 .opts{font-family:system-ui,sans-serif}.seg{display:flex;margin-top:12px}
 .sg{flex:1;border:1px solid var(--bd);padding:9px 0;font:15px system-ui,sans-serif;cursor:pointer;background:#fff;color:var(--fg)}
 .sg:first-child{border-radius:10px 0 0 10px}.sg:last-child{border-radius:0 10px 10px 0}.sg.on{background:var(--acc);color:#fff;border-color:var(--acc)}
-.opts h3{font-size:15px;margin:18px 0 4px}.opts .mut{color:var(--mut);font-size:13px;margin:0 0 8px}
+.opts h3{font-size:15px;margin:18px 0 4px}.opts .mut{margin:0 0 8px}
 .sw{width:38px;height:38px;border-radius:50%;border:1px solid #cdbfae;padding:0;margin:0 8px 8px 0;cursor:pointer}.sw.on{outline:3px solid var(--acc);outline-offset:2px}
 .sum{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-top:18px;font-size:15px}
 .bar .pp{flex:1;font-size:13px;color:var(--mut)}.bar .pp b{display:block;font-size:20px;color:var(--fg)}
-.add{background:var(--acc);color:#fff;border:0;border-radius:999px;padding:12px 26px;font:600 16px system-ui,sans-serif;cursor:pointer}
-.cartbtn{margin-left:auto}
-.cartbtn{position:relative;background:none;border:0;color:var(--fg);cursor:pointer;padding:4px;display:flex}.cartbtn b{position:absolute;top:-3px;right:-5px;background:var(--acc);color:#fff;border-radius:999px;font:600 11px/16px system-ui,sans-serif;min-width:16px;height:16px;text-align:center;padding:0 2px;box-sizing:border-box}
-
 </style></head>
-<body><div id="root"></div><div id="toast"></div>
-<script>
-const LIVE=/github\.io$/.test(location.hostname);
-let user=null;
-try{const u=JSON.parse(localStorage.getItem('wk_user')||'null');if(u&&u.email)user=u}catch(e){}
-if(LIVE&&!user)location.replace('index.html');
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3000)}
-function nav(url){if(LIVE)location.href=url;else toast('On your live site this opens '+url)}
-const BACK='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const sh=(h,a)=>{const n=parseInt(h.slice(1),16);return '#'+[16,8,0].map(s=>Math.round(((n>>s)&255)*(1-a)).toString(16).padStart(2,'0')).join('')};
-const ckey=()=>'wk_cart_'+(user?user.email:'guest');
-function getCart(){try{return JSON.parse(localStorage.getItem(ckey())||'[]')}catch(e){return[]}}
-function cartN(){return getCart().reduce((s,i)=>s+i.q,0)}
-const CARTSVG='<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M6 8h12l1 12H5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 8V7a3 3 0 0 1 6 0v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
-function cartBtn(){const n=cartN();return `<button class="cartbtn" onclick="nav('cart.html')" aria-label="Cart, ${n} items">${CARTSVG}${n?`<b>${n}</b>`:''}</button>`}
+<body class="hasbar"><div id="root"></div>
+<script type="module">
+import {gate,getProduct,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,shade as sh,peso,BACK,toast,DEFAULT_TOTE_PRICE} from './app.js';
 /* Colors people can choose from. Edit names and hex codes here to match the yarn and fabric you really have. */
 const COLORS=[{n:'Cream',h:'#f2e6d0'},{n:'Sage',h:'#9db39a'},{n:'Dusty rose',h:'#d9a0a0'},{n:'Navy',h:'#2b3a5c'},{n:'Mustard',h:'#d9a53b'},{n:'Charcoal',h:'#444444'}];
-const PRICE=450; /* placeholder price in pesos. The admin panel will set real prices later. */
-const peso=n=>'₱'+n.toLocaleString('en-PH');
+let PRICE=DEFAULT_TOTE_PRICE,user=null;
 const st={o:1,i:3,v:'out'};
 function bag(){const o=st.v==='out',b=COLORS[o?st.o:st.i].h,s=sh(b,.2),body='M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z';
  return `<svg viewBox="0 0 200 220" role="img" aria-label="${o?'Crochet outside':'Waterproof inside'} of the tote bag"><defs><pattern id="pp" width="10" height="8" patternUnits="userSpaceOnUse"><rect width="10" height="8" fill="${b}"/><path d="M1 1L5 7L9 1" fill="none" stroke="${s}" stroke-width="1.3"/></pattern></defs>
 <path d="M62 84C62 14 138 14 138 84" fill="none" stroke="${sh(b,.22)}" stroke-width="9" stroke-linecap="round"/><path d="${body}" fill="${o?'url(#pp)':b}"/>
 ${o?'':`<path d="M28 80H100L60 210H45Q39 210 38 204Z" fill="#fff" opacity=".22"/><rect x="72" y="150" width="56" height="20" rx="4" fill="${sh(b,.25)}" opacity=".5"/><text x="100" y="164" text-anchor="middle" font-size="11" font-family="sans-serif" fill="#fff">waterproof</text>`}
 <path d="M28 80H172" stroke="${sh(b,.3)}" stroke-width="5" stroke-linecap="round"/></svg>`}
-function sws(k){return COLORS.map((c,i)=>`<button class="sw ${st[k]===i?'on':''}" style="background:${c.h}" aria-label="${c.n}" onclick="pick('${k}',${i})"></button>`).join('')}
-function pick(k,i){st[k]=i;st.v=k==='o'?'out':'in';render()}
-function setView(v){st.v=v;render()}
-function addCart(){const o=COLORS[st.o],i=COLORS[st.i],id='tote-'+st.o+'-'+st.i,c=getCart(),f=c.find(x=>x.id===id);
- f?f.q++:c.push({id,name:'Reversible Tote Bag',o:{n:o.n,h:o.h},i:{n:i.n,h:i.h},price:PRICE,q:1,sel:true});
- try{localStorage.setItem(ckey(),JSON.stringify(c))}catch(e){}render();toast('Added to your cart')}
+const sws=k=>COLORS.map((c,i)=>`<button class="sw ${st[k]===i?'on':''}" style="background:${c.h}" aria-label="${c.n}" onclick="pick('${k}',${i})"></button>`).join('');
+window.pick=(k,i)=>{st[k]=i;st.v=k==='o'?'out':'in';render()};
+window.setView=v=>{st.v=v;render()};
+window.addCart=async()=>{
+ const o=COLORS[st.o],i=COLORS[st.i],id='tote-'+st.o+'-'+st.i;
+ try{const c=await getCart(user.uid),f=c.find(x=>x.id===id);
+  f?f.q++:c.push({id,pid:'tote',name:'Reversible Tote Bag',o:{n:o.n,h:o.h},i:{n:i.n,h:i.h},price:PRICE,q:1,sel:true});
+  await saveCart(user.uid,c);setBadge(cartTotalQty(c));toast('Added to your cart')}
+ catch(e){toast('Could not add to cart. Please try again.')}
+};
 function render(){
- if(LIVE&&!user)return;
- document.getElementById('root').innerHTML=`<header><button class="back" onclick="nav('category.html?c=bags')" aria-label="Back to bags">${BACK}</button><span class="ttl">Reversible Tote Bag</span>${cartBtn()}</header>
+ document.getElementById('root').innerHTML=`<header><button class="back" onclick="location.href='category.html?c=bags'" aria-label="Back to bags">${BACK}</button><span class="ttl">Reversible Tote Bag</span>${cartBtn()}</header>
 <main><div class="wrap"><div><div id="pv">${bag()}</div><div class="seg"><button class="sg ${st.v==='out'?'on':''}" onclick="setView('out')">Outside</button><button class="sg ${st.v==='in'?'on':''}" onclick="setView('in')">Inside</button></div></div>
 <div class="opts"><h3>Outside color</h3><p class="mut">The crochet side: ${COLORS[st.o].n}</p>${sws('o')}<h3>Inside color</h3><p class="mut">The waterproof side: ${COLORS[st.i].n}</p>${sws('i')}
 <div class="sum"><b>Your design</b><br>${COLORS[st.o].n} crochet outside, ${COLORS[st.i].n} waterproof inside</div></div></div></main>
-<div class="bar"><div class="pp">Price<b>${peso(PRICE)}</b></div><button class="add" onclick="addCart()">Add to cart</button></div>`}
-render();
+<div class="bar"><div class="pp">Price<b>${peso(PRICE)}</b></div><button class="btn" onclick="addCart()">Add to cart</button></div>`}
+gate(async u=>{user=u;try{const t=await getProduct('tote');if(t&&t.price)PRICE=Number(t.price)}catch(e){}render();initBadge(u.uid)});
 </script></body></html>
