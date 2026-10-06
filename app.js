@@ -1,7 +1,7 @@
 // Shared code for every Warm Knots page: Firebase sign-in, products, and carts.
 import {initializeApp} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {getAuth,GoogleAuthProvider,signInWithPopup,signOut as fbSignOut,onAuthStateChanged} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import {getFirestore,collection,getDocs,doc,getDoc,setDoc,deleteDoc} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import {getFirestore,collection,getDocs,doc,getDoc,setDoc,deleteDoc,query,where} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig={
   apiKey:"AIzaSyBZpjhGmNh4CoJJqkqICTdQJrusLcat_yg",
@@ -48,7 +48,7 @@ export const PALETTE=[
  {n:'Yellow',h:'#f6d55c'},{n:'Lemon',h:'#fbf3a0'},{n:'Sage',h:'#9db39a'},{n:'Mint',h:'#b8e0c8'},{n:'Olive',h:'#7d8a4a'},{n:'Forest',h:'#2f5d3a'},{n:'Teal',h:'#2a8c8c'},
  {n:'Sky blue',h:'#9fc5e8'},{n:'Baby blue',h:'#bcd8f0'},{n:'Blue',h:'#3d6fb6'},{n:'Navy',h:'#2b3a5c'},{n:'Lavender',h:'#c8b6e2'},{n:'Lilac',h:'#b497d6'},{n:'Purple',h:'#7a4fa3'},{n:'Plum',h:'#5e2a4f'}];
 const defaultCats=()=>[{id:'bags',name:'Bags',image:TOTE_IMG,createdAt:1},{id:'keychains',name:'Keychains',image:'',createdAt:2},{id:'hairclips',name:'Hair Clips',image:'',createdAt:3},{id:'plushies',name:'Plushies',image:'',createdAt:4}];
-const defaultTote=()=>({id:'tote',name:'Reversible Tote Bag',category:'bags',price:DEFAULT_TOTE_PRICE,image:TOTE_IMG,designer:true,description:'',options:[{label:'Outside',colors:DEFAULT_COLORS},{label:'Inside',colors:DEFAULT_COLORS}],createdAt:Date.now()});
+const defaultTote=()=>({id:'tote',name:'Reversible Tote Bag',category:'bags',price:DEFAULT_TOTE_PRICE,image:TOTE_IMG,designer:true,description:'',options:[{label:'Outside',colors:DEFAULT_COLORS.map((c,i)=>({...c,id:'o'+i}))},{label:'Inside',colors:DEFAULT_COLORS.map((c,i)=>({...c,id:'i'+i}))}],createdAt:Date.now()});
 let seeded=null,loadErr='';
 export const getLoadError=()=>loadErr;
 export const colorGroups=p=>((p&&p.options)||[]).filter(g=>g&&g.colors&&g.colors.length);
@@ -73,6 +73,15 @@ export const saveProduct=p=>setDoc(doc(db,'products',p.id),JSON.parse(JSON.strin
 export const deleteProduct=id=>deleteDoc(doc(db,'products',id));
 export const saveCategory=c=>setDoc(doc(db,'categories',c.id),JSON.parse(JSON.stringify(c)));
 export const deleteCategory=id=>deleteDoc(doc(db,'categories',id));
+// ---- one photo per color choice (each saved as its own entry so a product never goes over the size limit) ----
+export const newId=()=>'k'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+export async function loadColorPhotos(pid){const m={};
+ try{(await getDocs(query(collection(db,'colorPhotos'),where('pid','==',pid)))).forEach(d=>{const x=d.data();m[x.cid]=x.image})}catch(e){loadErr=e.code||e.message||'unknown error'}
+ return m}
+export const saveColorPhoto=(pid,cid,image)=>setDoc(doc(db,'colorPhotos',pid+'__'+cid),{pid,cid,image});
+export const deleteColorPhoto=(pid,cid)=>deleteDoc(doc(db,'colorPhotos',pid+'__'+cid));
+export async function deleteAllColorPhotos(pid){const s=await getDocs(query(collection(db,'colorPhotos'),where('pid','==',pid)));await Promise.all(s.docs.map(d=>deleteDoc(d.ref)))}
+
 // first time the owner opens the admin panel: copy the starting categories and tote into the database so they can be edited or deleted like anything else
 export async function seedAll(){
  for(const c of defaultCats()){const r=doc(db,'categories',c.id);if(!(await getDoc(r)).exists())await setDoc(r,JSON.parse(JSON.stringify(c)))}
