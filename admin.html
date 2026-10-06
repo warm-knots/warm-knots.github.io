@@ -23,12 +23,12 @@ textarea{min-height:90px;resize:vertical}
 </style></head>
 <body><div id="root"></div>
 <script type="module">
-import {onUser,signIn,signOutUser,isAdmin,loadProducts,saveProduct,deleteProduct,resizeImage,esc,peso,toast,BACK,CATS,TOTE_IMG,ADMIN_EMAIL} from './app.js';
+import {getLoadError,onUser,signIn,signOutUser,isAdmin,loadProducts,saveProduct,deleteProduct,resizeImage,esc,peso,toast,BACK,CATS,TOTE_IMG,ADMIN_EMAIL} from './app.js';
 let user=null,list=[],ed=null,img='',loading=true;
 const $=id=>document.getElementById(id),root=$('root');
 window.out=()=>signOutUser().then(()=>render());
 window.login=async()=>{try{await signIn()}catch(e){const c=e.code||'';if(c!=='auth/popup-closed-by-user'&&c!=='auth/cancelled-popup-request')toast('Sign-in failed. Please try again.')}};
-async function refresh(){try{list=await loadProducts()}catch(e){toast('Could not load products: '+(e.code||e.message))}loading=false}
+async function refresh(){try{list=await loadProducts()}catch(e){toast('Could not load products: '+(e.code||e.message))}if(getLoadError())toast('Could not load products: '+getLoadError());loading=false}
 onUser(async u=>{user=u;if(isAdmin(u))await refresh();render()});
 window.onFile=async inp=>{const f=inp.files[0];if(!f)return;try{img=await resizeImage(f);const p=$('prev');p.src=img;p.style.display='block'}catch(e){toast('Could not use that photo. Try a different one.')}};
 window.edit=id=>{ed=list.find(p=>p.id===id);img=ed.image||'';render();window.scrollTo(0,0)};
