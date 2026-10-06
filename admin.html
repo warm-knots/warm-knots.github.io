@@ -15,7 +15,7 @@ textarea{min-height:90px;resize:vertical}
 .chk{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:15px;color:var(--fg)}.chk input{width:18px;height:18px;accent-color:var(--acc)}
 .acts{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
 .tabs{display:flex;margin-bottom:18px}.tabs button{flex:1;border:1px solid var(--bd);background:#fff;color:var(--fg);padding:10px 0;font:600 15px system-ui,sans-serif;cursor:pointer}
-.tabs button:first-child{border-radius:10px 0 0 10px}.tabs button:last-child{border-radius:0 10px 10px 0}.tabs .on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.tabs button:first-child{border-radius:10px 0 0 10px}.tabs button:last-child{border-radius:0 10px 10px 0}.tabs button:not(:first-child){border-left:0}.tabs .on{background:var(--acc);color:#fff;border-color:var(--acc)}
 .pr{display:flex;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--bd);touch-action:none;user-select:none;-webkit-user-select:none}
 .pr:first-of-type{border-top:0}
 .pr.dragging{opacity:.45;background:#fff3ee}
@@ -54,8 +54,8 @@ textarea{min-height:90px;resize:vertical}
 </style></head>
 <body><div id="root"></div>
 <script type="module">
-import {getLoadError,onUser,signIn,signOutUser,isAdmin,loadProducts,loadCategories,saveProduct,deleteProduct,saveCategory,deleteCategory,isSeeded,seedAll,resizeImage,loadColorPhotos,saveColorPhoto,deleteColorPhoto,deleteAllColorPhotos,newId,esc,peso,toast,BACK,PALETTE} from './app.js';
-let user=null,cats=[],list=[],tab='products',pf=null,cf=null,loading=true,act={t:'p',gi:0,ci:0};
+import {getLoadError,onUser,signIn,signOutUser,isAdmin,loadProducts,loadCategories,saveProduct,deleteProduct,saveCategory,deleteCategory,isSeeded,seedAll,resizeImage,loadColorPhotos,saveColorPhoto,deleteColorPhoto,deleteAllColorPhotos,newId,esc,peso,toast,BACK,PALETTE,loadLogo,saveLogo,LOGO} from './app.js';
+let user=null,cats=[],list=[],tab='products',pf=null,cf=null,loading=true,act={t:'p',gi:0,ci:0},siteLogo='';
 // which category groups are expanded (persists across re-renders in this session)
 let openGroups=new Set();
 const $=id=>document.getElementById(id),root=$('root');
@@ -67,7 +67,7 @@ window.out=()=>signOutUser().then(()=>render());
 window.login=async()=>{try{await signIn()}catch(e){const c=e.code||'';if(c!=='auth/popup-closed-by-user'&&c!=='auth/cancelled-popup-request')toast('Sign-in failed. Please try again.')}};
 async function refresh(){
  try{if(!(await isSeeded()))await seedAll()}catch(e){toast('Could not set up your shop data: '+(e.code||e.message))}
- cats=await loadCategories();list=await loadProducts();
+ cats=await loadCategories();list=await loadProducts();siteLogo=await loadLogo();
  if(getLoadError())toast('Could not load everything: '+getLoadError());
  if(!pf)pf=newPF();if(!cf)cf=newCF();loading=false;
 }
@@ -77,13 +77,14 @@ function sync(){
  if(tab==='products'&&pf&&$('f_n')){pf.name=$('f_n').value;pf.category=$('f_c').value;pf.price=$('f_p').value;pf.description=$('f_d').value;pf.soldOut=$('f_s').checked;pf.useColors=$('f_u').checked;pf.groups.forEach((g,i)=>{const e=$('gl'+i);if(e)g.label=e.value})}
  if(tab==='cats'&&cf&&$('c_n'))cf.name=$('c_n').value;
 }
-window.setTab=t=>{sync();tab=t;act={t:tab==='cats'?'c':'p',gi:0,ci:0};render()};
+window.setTab=t=>{sync();tab=t;act={t:tab==='cats'?'c':tab==='site'?'logo':'p',gi:0,ci:0};render()};
 // ---- photos: paste, drop, or upload into the selected box ----
 const keyOf=a=>a.t+'|'+a.gi+'|'+a.ci;
 window.actv=(t,gi,ci)=>{act={t,gi,ci};document.querySelectorAll('.slot').forEach(s=>s.classList.toggle('act',s.dataset.k===keyOf(act)))};
 async function putPhoto(file){
- sync();let t=act.t;if(tab==='cats')t='c';else if(t==='c')t='p';
+ sync();let t=act.t;if(tab==='cats')t='c';else if(tab==='site')t='logo';else if(t==='c')t='p';
  try{
+  if(t==='logo'){siteLogo=await resizeImage(file,400,.85);render();toast('Logo updated (not saved yet)');return}
   if(t==='color'){const c=pf.groups[act.gi]&&pf.groups[act.gi].colors[act.ci];
    if(c){pf.photos[c.id]=await resizeImage(file,700,.7);pf.dirty[c.id]=1;render();toast('Photo added to '+c.n);return}t='p'}
   if(t==='c'){cf.image=await resizeImage(file,700);render();toast('Picture added');return}
@@ -245,6 +246,15 @@ document.addEventListener('pointerdown',onPointerDown,{passive:false});
 document.addEventListener('pointermove',onPointerMove,{passive:false});
 document.addEventListener('pointerup',onPointerUp);
 document.addEventListener('pointercancel',onPointerUp);
+// ---- site logo ----
+window.saveSiteLogo=async()=>{
+ if(!siteLogo)return toast('Please add a logo image first');
+ try{await saveLogo(siteLogo);toast('Logo saved! It will show on the shop and home page.');render()}
+ catch(e){toast('Could not save logo: '+(e.code||e.message))}
+};
+window.resetLogo=()=>{siteLogo=LOGO;render();toast('Reset to the original logo (click Save to keep)')};
+window.rmLogo=()=>{siteLogo='';render()};
+
 // ---- screens ----
 const slot=(t,gi,ci,img,cls,label)=>{const k=t+'|'+gi+'|'+ci;return `<div class="slot ${cls} ${keyOf(act)===k?'act':''}" data-k="${k}" onclick="actv('${t}',${gi},${ci})" ondragover="event.preventDefault()" ondrop="dropP(event,'${t}',${gi},${ci})">${img?`<img src="${img}" alt="">`:`<span>${label}</span>`}</div>`};
 function groupHtml(g,gi){
@@ -258,6 +268,20 @@ function productRow(p){
  const c=cats.find(x=>x.id===p.category),n=(p.options||[]).reduce((s,g)=>s+(g.colors||[]).length,0);
  return `<div class="pr" data-dtype="prod" data-group="${esc(p.category||'__none')}" data-id="${esc(p.id)}">${HANDLE}<img src="${p.image}" alt=""><div class="t"><b>${esc(p.name)}</b><span>${esc(c?c.name:'No category (hidden)')} · ${peso(p.price)}${p.soldOut?' · Sold out':''}${n?' · '+n+' color choices':''}</span></div><button class="btn alt sm" onclick="editP('${esc(p.id)}')">Edit</button><button class="btn alt sm dng" onclick="delP('${esc(p.id)}')">Delete</button></div>`;
 }
+
+function siteView(){
+ return `<div class="card"><h2>Shop logo</h2>
+<p class="hint" style="margin-top:0">This picture appears at the top of the home page and the shop. Use a square image for best results.</p>
+<label>Logo</label>${slot('logo',0,0,siteLogo,'big','Click, then Ctrl+V to paste')}
+<div class="hint">Click the box, then press Ctrl+V to paste. You can also drop a file on it or <a href="#" onclick="document.getElementById('logo_file').click();return false">upload one</a>.</div>
+<input type="file" accept="image/*" id="logo_file" style="display:none" onchange="onFile(this,'logo')">
+${siteLogo?`<div style="margin-top:14px;display:flex;align-items:center;gap:12px"><img src="${siteLogo}" alt="Preview" style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--bd)"><span class="mut" style="font:13px system-ui,sans-serif">Preview (how it looks in the header)</span></div>`:''}
+<div class="acts">
+<button class="btn" onclick="saveSiteLogo()">Save logo</button>
+<button class="btn alt" onclick="resetLogo()">Use original logo</button>
+</div></div>`;
+}
+
 function productsView(){
  const colorsUI=pf.useColors?`${pf.groups.map(groupHtml).join('')}<div class="acts"><button class="btn alt sm" onclick="addGroup()">Add another color group</button><button class="btn alt sm" onclick="presetBag()">Set up Outside + Inside (for bags)</button></div>`:'';
  // group products by category, following category order
@@ -309,6 +333,6 @@ function render(){
  if(!user){root.innerHTML=top()+`<div class="center"><p class="mut">This page is only for the shop owner.</p><button class="btn" onclick="login()">Sign in with Google</button></div>`;return}
  if(!isAdmin(user)){root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+`<div class="center"><h2>Access denied</h2><p class="mut">This page is only for the shop owner. You are signed in as ${esc(user.email)}.</p></div>`;return}
  if(loading){root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+'<main><p class="mut">Loading your shop...</p></main>';return}
- root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+`<main style="padding-bottom:40px"><div class="tabs"><button class="${tab==='products'?'on':''}" onclick="setTab('products')">Products</button><button class="${tab==='cats'?'on':''}" onclick="setTab('cats')">Categories</button></div>${tab==='products'?productsView():catsView()}</main>`;
+ root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+`<main style="padding-bottom:40px"><div class="tabs"><button class="${tab==='products'?'on':''}" onclick="setTab('products')">Products</button><button class="${tab==='cats'?'on':''}" onclick="setTab('cats')">Categories</button><button class="${tab==='site'?'on':''}" onclick="setTab('site')">Site</button></div>${tab==='products'?productsView():tab==='cats'?catsView():siteView()}</main>`;
 }
 </script></body></html>
