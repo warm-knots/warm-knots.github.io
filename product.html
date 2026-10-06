@@ -8,7 +8,9 @@
 <style>
 .pw{display:grid;grid-template-columns:1fr;gap:20px}
 @media(min-width:720px){.pw{grid-template-columns:1fr 1fr;align-items:start}}
-.big{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:16px;border:1px solid var(--bd);display:block}
+.big{width:100%;aspect-ratio:4/5;object-fit:cover;display:block}
+.frame{display:flex;border:1px solid #cdbfae;border-radius:16px;overflow:hidden;background:#fff}.half{flex:1;min-width:0}.half+.half{border-left:1px solid #cdbfae}
+.cap2{text-align:center;font:13px system-ui,sans-serif;color:var(--mut);padding:7px 0;border-top:1px solid #cdbfae}
 .info h2{font-size:24px;margin:0 0 6px}.price{color:var(--acc);font:600 22px system-ui,sans-serif;margin-bottom:12px}
 .desc{white-space:pre-line;font-size:16px;margin-top:14px}.sold{display:inline-block;background:#3a2e2a;color:#fff;font:600 12px system-ui,sans-serif;border-radius:999px;padding:3px 12px;margin-bottom:10px}
 .opt{font-family:system-ui,sans-serif;margin-top:14px}.opt h3{font-size:15px;margin:0 0 2px}.opt .mut{margin:0 0 8px}
@@ -17,13 +19,17 @@
 </style></head>
 <body class="hasbar"><div id="root"></div>
 <script type="module">
-import {gate,getProduct,loadCategories,colorGroups,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,esc,peso,BACK,toast} from './app.js';
+import {gate,getProduct,loadCategories,loadColorPhotos,colorGroups,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,esc,peso,BACK,toast} from './app.js';
 const id=new URLSearchParams(location.search).get('id');
-let user=null,p=null,groups=[],pick=[];
+let user=null,p=null,groups=[],pick=[],photos={};
 const swatches=()=>groups.map((g,gi)=>`<div class="opt"><h3>${esc(g.label||'Color')}</h3><p class="mut">${esc(g.colors[pick[gi]].n)}</p>${g.colors.map((c,ci)=>`<button class="sw ${pick[gi]===ci?'on':''}" style="background:${c.h}" aria-label="${esc(c.n)}" onclick="choose(${gi},${ci})"></button>`).join('')}</div>`).join('');
-window.choose=(gi,ci)=>{pick[gi]=ci;document.getElementById('opts').innerHTML=swatches()};
+const view=()=>{const hp=groups.map((g,gi)=>gi).filter(gi=>groups[gi].colors.some(c=>photos[c.id]));
+ const img=gi=>photos[groups[gi].colors[pick[gi]].id]||p.image;
+ if(hp.length>=2)return `<div class="frame">${hp.slice(0,2).map(gi=>`<div class="half"><img class="big" src="${img(gi)}" alt="${esc(groups[gi].label||'')}"><div class="cap2">${esc(groups[gi].label||'Color')}: ${esc(groups[gi].colors[pick[gi]].n)}</div></div>`).join('')}</div>`;
+ return `<div class="frame"><div class="half"><img class="big" src="${hp.length?img(hp[0]):p.image}" alt="${esc(p.name)}"></div></div>`};
+window.choose=(gi,ci)=>{pick[gi]=ci;document.getElementById('opts').innerHTML=swatches();document.getElementById('view').innerHTML=view()};
 window.addCart=async()=>{
- const variants=groups.map((g,gi)=>({g:g.label||'Color',n:g.colors[pick[gi]].n,h:g.colors[pick[gi]].h}));
+ const variants=groups.map((g,gi)=>({g:g.label||'Color',n:g.colors[pick[gi]].n,h:g.colors[pick[gi]].h,id:g.colors[pick[gi]].id||''}));
  const cid='p-'+p.id+variants.map(v=>'-'+v.n).join('');
  try{const c=await getCart(user.uid),f=c.find(x=>x.id===cid);
   f?f.q++:c.push({id:cid,pid:p.id,name:p.name,price:p.price,q:1,sel:true,variants});
@@ -38,8 +44,9 @@ gate(async u=>{
  if(!p){document.querySelector('main').innerHTML='<div class="empty"><h2>We could not find that product</h2><p><a href="shop.html">Back to the shop</a></p></div>';return}
  if(p.designer){location.replace('tote.html');return}
  groups=colorGroups(p);pick=groups.map(()=>0);
+ if(groups.length)photos=await loadColorPhotos(p.id);
  const cats=await loadCategories(),cat=cats.find(c=>c.id===p.category);
- document.querySelector('main').innerHTML=`<div class="pw"><img class="big" src="${p.image}" alt="${esc(p.name)}"><div class="info">${p.soldOut?'<span class="sold">Sold out</span>':''}<h2>${esc(p.name)}</h2><div class="price">${peso(p.price)}</div><div class="mut">${esc(cat?cat.name:'')}</div><div id="opts">${swatches()}</div><div class="desc">${esc(p.description||'')}</div></div></div>`;
+ document.querySelector('main').innerHTML=`<div class="pw"><div id="view">${view()}</div><div class="info">${p.soldOut?'<span class="sold">Sold out</span>':''}<h2>${esc(p.name)}</h2><div class="price">${peso(p.price)}</div><div class="mut">${esc(cat?cat.name:'')}</div><div id="opts">${swatches()}</div><div class="desc">${esc(p.description||'')}</div></div></div>`;
  root.insertAdjacentHTML('beforeend',`<div class="bar"><div class="pp">Price<b>${peso(p.price)}</b></div><button class="btn" ${p.soldOut?'disabled':''} onclick="addCart()">${p.soldOut?'Sold out':'Add to cart'}</button></div>`);
 });
 </script></body></html>
