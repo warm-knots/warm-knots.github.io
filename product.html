@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="color-scheme" content="only light">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Product | Warm Knots</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+.pw{display:grid;grid-template-columns:1fr;gap:20px}
+@media(min-width:720px){.pw{grid-template-columns:1fr 1fr;align-items:start}}
+.big{width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:16px;border:1px solid var(--bd);display:block}
+.info h2{font-size:24px;margin:0 0 6px}.price{color:var(--acc);font:600 22px system-ui,sans-serif;margin-bottom:12px}
+.desc{white-space:pre-line;font-size:16px}.sold{display:inline-block;background:#3a2e2a;color:#fff;font:600 12px system-ui,sans-serif;border-radius:999px;padding:3px 12px;margin-bottom:10px}
+.bar .pp{flex:1;font-size:13px;color:var(--mut)}.bar .pp b{display:block;font-size:20px;color:var(--fg)}
+</style></head>
+<body class="hasbar"><div id="root"></div>
+<script type="module">
+import {gate,getProduct,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,esc,peso,BACK,CATS,toast} from './app.js';
+const id=new URLSearchParams(location.search).get('id');
+let user=null,p=null;
+window.addCart=async()=>{
+ try{const c=await getCart(user.uid),cid='p-'+p.id,f=c.find(x=>x.id===cid);
+  f?f.q++:c.push({id:cid,pid:p.id,name:p.name,price:p.price,q:1,sel:true});
+  await saveCart(user.uid,c);setBadge(cartTotalQty(c));toast('Added to your cart')}
+ catch(e){toast('Could not add to cart. Please try again.')}
+};
+gate(async u=>{
+ user=u;
+ const root=document.getElementById('root');
+ root.innerHTML=`<header><button class="back" onclick="history.length>1?history.back():location.href='shop.html'" aria-label="Back">${BACK}</button><span class="ttl">Details</span>${cartBtn()}</header><main><p class="mut">Loading...</p></main>`;
+ initBadge(u.uid);
+ try{p=id?await getProduct(id):null}catch(e){p=null}
+ if(!p){document.querySelector('main').innerHTML='<div class="empty"><h2>We could not find that product</h2><p><a href="shop.html">Back to the shop</a></p></div>';return}
+ if(p.designer){location.replace('tote.html');return}
+ document.querySelector('main').innerHTML=`<div class="pw"><img class="big" src="${p.image}" alt="${esc(p.name)}"><div class="info">${p.soldOut?'<span class="sold">Sold out</span>':''}<h2>${esc(p.name)}</h2><div class="price">${peso(p.price)}</div><div class="mut" style="margin-bottom:10px">${esc(CATS[p.category]||'')}</div><div class="desc">${esc(p.description||'')}</div></div></div>`;
+ root.insertAdjacentHTML('beforeend',`<div class="bar"><div class="pp">Price<b>${peso(p.price)}</b></div><button class="btn" ${p.soldOut?'disabled':''} onclick="addCart()">${p.soldOut?'Sold out':'Add to cart'}</button></div>`);
+});
+</script></body></html>
