@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="color-scheme" content="only light">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Owner panel | Warm Knots</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:18px;font-family:system-ui,sans-serif}
+.card h2{margin:0 0 12px;font:600 18px Georgia,serif}
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
+input[type=text],input[type=number],select,textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif}
+textarea{min-height:90px;resize:vertical}
+.chk{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:15px;color:var(--fg)}.chk input{width:18px;height:18px;accent-color:var(--acc)}
+#prev{width:140px;aspect-ratio:4/5;object-fit:cover;border-radius:10px;border:1px solid var(--bd);margin-top:8px;display:none}
+.acts{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.pr{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--bd)}.pr:first-of-type{border-top:0}
+.pr img{width:56px;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--bd);flex:none}
+.pr .t{flex:1;min-width:0}.pr .t b{display:block;font:600 15px Georgia,serif}.pr .t span{font-size:12px;color:var(--mut)}
+.sm{padding:6px 14px;font-size:13px}.dng{border-color:#b3261e;color:#b3261e}
+.center{max-width:420px;margin:40px auto;text-align:center}
+</style></head>
+<body><div id="root"></div>
+<script type="module">
+import {onUser,signIn,signOutUser,isAdmin,loadProducts,saveProduct,deleteProduct,resizeImage,esc,peso,toast,BACK,CATS,TOTE_IMG,ADMIN_EMAIL} from './app.js';
+let user=null,list=[],ed=null,img='',loading=true;
+const $=id=>document.getElementById(id),root=$('root');
+window.out=()=>signOutUser().then(()=>render());
+window.login=async()=>{try{await signIn()}catch(e){const c=e.code||'';if(c!=='auth/popup-closed-by-user'&&c!=='auth/cancelled-popup-request')toast('Sign-in failed. Please try again.')}};
+async function refresh(){try{list=await loadProducts()}catch(e){toast('Could not load products: '+(e.code||e.message))}loading=false}
+onUser(async u=>{user=u;if(isAdmin(u))await refresh();render()});
+window.onFile=async inp=>{const f=inp.files[0];if(!f)return;try{img=await resizeImage(f);const p=$('prev');p.src=img;p.style.display='block'}catch(e){toast('Could not use that photo. Try a different one.')}};
+window.edit=id=>{ed=list.find(p=>p.id===id);img=ed.image||'';render();window.scrollTo(0,0)};
+window.cancel=()=>{ed=null;img='';render()};
+window.del=async id=>{const p=list.find(x=>x.id===id);if(!confirm('Delete "'+p.name+'"? This cannot be undone.'))return;
+ try{await deleteProduct(id);toast('Deleted');await refresh();render()}catch(e){toast('Could not delete: '+(e.code||e.message))}};
+window.save=async()=>{
+ const name=$('f_n').value.trim();if(!name)return toast('Please enter a product name');
+ const isTote=ed&&ed.id==='tote';
+ if(!img)return toast('Please add a photo');
+ const p={id:ed?ed.id:'p'+Date.now(),name,category:isTote?'bags':$('f_c').value,price:Number($('f_p').value)||0,description:$('f_d').value.trim(),image:isTote&&img===TOTE_IMG?'':img,soldOut:$('f_s').checked,createdAt:(ed&&ed.createdAt)||Date.now()};
+ if(isTote)p.designer=true;
+ $('sv').disabled=true;
+ try{await saveProduct(p);toast('Saved!');ed=null;img='';await refresh();render();window.scrollTo(0,0)}
+ catch(e){toast('Could not save: '+(e.code||e.message));$('sv').disabled=false}
+};
+function view(){
+ const isTote=ed&&ed.id==='tote';
+ return `<main style="padding-bottom:40px">
+<div class="card"><h2>${ed?'Edit product':'Add a product'}</h2>
+<label>Photo</label><input type="file" accept="image/*" onchange="onFile(this)"><img id="prev" alt="Photo preview" src="${esc(img)}" style="display:${img?'block':'none'}">
+<label>Name</label><input type="text" id="f_n" value="${esc(ed?ed.name:'')}" placeholder="e.g. Bear keychain">
+<label>Category</label><select id="f_c" ${isTote?'disabled':''}>${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${(ed?ed.category:'keychains')===k?'selected':''}>${v}</option>`).join('')}</select>
+<label>Price (pesos)</label><input type="number" id="f_p" min="0" step="1" inputmode="numeric" value="${ed&&ed.price?ed.price:''}" placeholder="e.g. 120">
+<label>Description and other details</label><textarea id="f_d" placeholder="Size, materials, colors, care...">${esc(ed?ed.description||'':'')}</textarea>
+<label class="chk"><input type="checkbox" id="f_s" ${ed&&ed.soldOut?'checked':''}> Mark as sold out</label>
+<div class="acts"><button class="btn" id="sv" onclick="save()">${ed?'Save changes':'Add product'}</button>${ed?'<button class="btn alt" onclick="cancel()">Cancel</button>':''}</div></div>
+<div class="card"><h2>Your products (${list.length})</h2>${loading?'<p class="mut">Loading...</p>':list.map(p=>`<div class="pr"><img src="${p.image}" alt=""><div class="t"><b>${esc(p.name)}</b><span>${esc(CATS[p.category]||'')}${p.designer?'':' · '+peso(p.price)}${p.soldOut?' · Sold out':''}${p.designer?' · Tote designer (price '+peso(p.price)+')':''}</span></div><button class="btn alt sm" onclick="edit('${esc(p.id)}')">Edit</button>${p.designer?'':`<button class="btn alt sm dng" onclick="del('${esc(p.id)}')">Delete</button>`}</div>`).join('')}</div></main>`;
+}
+function render(){
+ const top=(right)=>`<header><button class="back" onclick="location.href='shop.html'" aria-label="Back to shop">${BACK}</button><span class="ttl">Owner panel</span>${right||''}</header>`;
+ if(!user){root.innerHTML=top()+`<div class="center"><p class="mut">This page is only for the shop owner.</p><button class="btn" onclick="login()">Sign in with Google</button></div>`;return}
+ if(!isAdmin(user)){root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+`<div class="center"><h2>Access denied</h2><p class="mut">This page is only for the shop owner. You are signed in as ${esc(user.email)}.</p></div>`;return}
+ root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+view();
+}
+</script></body></html>
