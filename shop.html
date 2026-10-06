@@ -25,6 +25,7 @@ footer{text-align:center;padding:24px 20px 40px;font:13px system-ui,sans-serif;c
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font:14px system-ui,sans-serif;display:none;max-width:90%}
 @media(max-width:520px){header{padding:10px 14px;gap:10px}.logo{width:38px;height:38px}.brand{font-size:22px}.nm{display:none}main{padding:24px 14px 10px}h1{font-size:25px}.sub{font-size:15px;margin-bottom:18px}.grid{gap:10px}.cat{border-radius:12px}.cap{padding:8px 8px 10px}.cap b{font-size:15px}.cap span{display:none}.tile{font-size:10px;text-align:center;padding:4px;box-sizing:border-box}}
 .lnk{white-space:nowrap}
+.cartbtn{position:relative;background:none;border:0;color:var(--fg);cursor:pointer;padding:4px;display:flex}.cartbtn b{position:absolute;top:-3px;right:-5px;background:var(--acc);color:#fff;border-radius:999px;font:600 11px/16px system-ui,sans-serif;min-width:16px;height:16px;text-align:center;padding:0 2px;box-sizing:border-box}
 </style></head>
 <body><div id="root"></div><div id="toast"></div>
 <script>
@@ -39,6 +40,12 @@ const CATS=[
  {id:'hairclips',n:'Hair Clips',d:'Handmade hair accessories',c:'#e2b95a'},
  {id:'plushies',n:'Plushies',d:'Soft crochet friends',c:'#9fb3d1'}];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function nav(u){if(LIVE)location.href=u;else toast('On your live site this opens '+u)}
+const ckey=()=>'wk_cart_'+(user?user.email:'guest');
+function getCart(){try{return JSON.parse(localStorage.getItem(ckey())||'[]')}catch(e){return[]}}
+function cartN(){return getCart().reduce((s,i)=>s+i.q,0)}
+const CARTSVG='<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M6 8h12l1 12H5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M9 8V7a3 3 0 0 1 6 0v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+function cartBtn(){const n=cartN();return `<button class="cartbtn" onclick="nav('cart.html')" aria-label="Cart, ${n} items">${CARTSVG}${n?`<b>${n}</b>`:''}</button>`}
 function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3000)}
 function go(id){if(LIVE)location.href='category.html?c='+id;else toast('On your live site this opens the '+CATS.find(x=>x.id===id).n+' page.')}
 function signOut(){try{localStorage.removeItem('wk_user')}catch(e){}user=null;if(LIVE)location.href='index.html';else render()}
@@ -46,7 +53,7 @@ function render(){
  if(LIVE&&!user)return;
  const first=user?esc(user.name.split(' ')[0]):'';
  document.getElementById('root').innerHTML=`
-<header><img class="logo" src="${LOGO}" alt="Warm Knots logo"><span class="brand">Warm Knots</span>${user?`<span class="user">${user.pic?`<img class="av" src="${esc(user.pic)}" alt="" referrerpolicy="no-referrer">`:`<span class="av">${esc(user.name[0].toUpperCase())}</span>`}<span class="nm">${first}</span><button class="lnk" onclick="signOut()">Sign out</button></span>`:''}</header>
+<header><img class="logo" src="${LOGO}" alt="Warm Knots logo"><span class="brand">Warm Knots</span>${cartBtn()}${user?`<span class="user">${user.pic?`<img class="av" src="${esc(user.pic)}" alt="" referrerpolicy="no-referrer">`:`<span class="av">${esc(user.name[0].toUpperCase())}</span>`}<span class="nm">${first}</span><button class="lnk" onclick="signOut()">Sign out</button></span>`:''}</header>
 <main><h1>What are we hooking you up with today?</h1><p class="sub">${user?`Hi, ${first}! `:''}Everything here is handmade with love, one loop at a time. Pick a category and get cozy.</p>
 <div class="grid">${CATS.map(c=>`<button class="cat" onclick="go('${c.id}')">${c.img?`<img class="pic" src="${c.img}" alt="${c.n}">`:`<div class="tile" style="background:repeating-linear-gradient(135deg,${c.c},${c.c} 7px,rgba(0,0,0,.07) 7px,rgba(0,0,0,.07) 14px)">Photo coming soon</div>`}<div class="cap"><b>${c.n}</b><span>${c.d}</span></div></button>`).join('')}</div></main>
 <footer><a href="privacy.html">Privacy Policy</a> · <a href="terms.html">Terms of Service</a></footer>`;
