@@ -4,68 +4,51 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Shopping Cart | Warm Knots</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap">
+<link rel="stylesheet" href="style.css">
 <style>
-:root{color-scheme:only light;--bg:#fbf6ef;--fg:#3a2e2a;--card:#fff;--mut:#8a7a70;--acc:#c8553d;--bd:#eadfd2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-body{margin:0;background:var(--bg);color:var(--fg);font-family:Georgia,'Times New Roman',serif;line-height:1.5}
-header{display:flex;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--bd)}
-.back{background:none;border:0;color:var(--fg);cursor:pointer;padding:4px;display:flex}
-.ttl{font-family:'Pacifico','Brush Script MT',cursive;color:var(--acc);font-size:clamp(20px,5.5vw,26px);white-space:nowrap}
-main{max-width:860px;margin:0 auto;padding:22px 16px 110px}
-#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font:14px system-ui,sans-serif;display:none;max-width:90%;z-index:9}
-.bar{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--bd);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:12px;font-family:system-ui,sans-serif;z-index:5}
-header .edit{margin-left:auto;background:none;border:0;color:var(--fg);font:15px system-ui,sans-serif;cursor:pointer}
+header .edit{background:none;border:0;color:var(--fg);font:15px system-ui,sans-serif;cursor:pointer}
 .it{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:12px;margin-bottom:12px}
 .it input[type=checkbox],.all input{width:20px;height:20px;accent-color:var(--acc);margin:28px 0 0;flex:none}
-.th{width:84px;height:84px;border-radius:10px;background:#f3ebdf;flex:none;display:flex;align-items:center;justify-content:center}.th svg{height:86%}
-.inf{flex:1;min-width:0;font-family:system-ui,sans-serif}.nm{font:600 15px Georgia,serif}
-.var{font-size:12px;color:var(--mut);margin:4px 0 8px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;border:1px solid #cdbfae;margin-right:3px;vertical-align:middle}
+.th{width:84px;height:84px;border-radius:10px;background:#f3ebdf;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden}.th svg{height:86%}.th img{width:100%;height:100%;object-fit:cover}
+.inf{flex:1;min-width:0;font-family:system-ui,sans-serif}.nmx{font:600 15px Georgia,serif}
+.var{font-size:12px;color:var(--mut);margin:4px 0 8px;min-height:6px}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;border:1px solid #cdbfae;margin-right:3px;vertical-align:middle}
 .pq{display:flex;justify-content:space-between;align-items:center}.pr{color:var(--acc);font-weight:600;font-size:16px}
 .qt{display:inline-flex;align-items:center;border:1px solid var(--bd);border-radius:8px;overflow:hidden}.qt button{background:#fff;border:0;width:30px;height:28px;font-size:18px;cursor:pointer;color:var(--fg)}.qt span{min-width:30px;text-align:center;font-size:14px}
 .dl{background:none;border:1px solid var(--acc);color:var(--acc);border-radius:8px;padding:4px 12px;cursor:pointer;font-size:13px}
 .all{display:flex;align-items:center;gap:8px;font-size:15px}.all input{margin:0}
 .tot{flex:1;text-align:right;font-size:13px;color:var(--mut)}.tot b{font-size:18px;color:var(--acc)}
-.co{background:var(--acc);color:#fff;border:0;border-radius:999px;padding:12px 22px;font:600 15px system-ui,sans-serif;cursor:pointer}.co:disabled{opacity:.45;cursor:default}
-.empty{text-align:center;color:var(--mut);padding:60px 10px}.empty h2{color:var(--fg);font-size:20px;margin:0 0 6px}
-.go{background:var(--acc);color:#fff;border:0;border-radius:999px;padding:10px 24px;font:15px system-ui,sans-serif;cursor:pointer;margin-top:10px}
 @media(max-width:520px){.it{padding:10px}.th{width:72px;height:72px}}
 </style></head>
-<body><div id="root"></div><div id="toast"></div>
-<script>
-const LIVE=/github\.io$/.test(location.hostname);
-let user=null;
-try{const u=JSON.parse(localStorage.getItem('wk_user')||'null');if(u&&u.email)user=u}catch(e){}
-if(LIVE&&!user)location.replace('index.html');
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>t.style.display='none',3000)}
-function nav(url){if(LIVE)location.href=url;else toast('On your live site this opens '+url)}
-const BACK='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-const sh=(h,a)=>{const n=parseInt(h.slice(1),16);return '#'+[16,8,0].map(s=>Math.round(((n>>s)&255)*(1-a)).toString(16).padStart(2,'0')).join('')};
+<body class="hasbar"><div id="root"></div>
+<script type="module">
+import {gate,getCart,saveCart,loadProducts,esc,peso,shade as sh,BACK,toast} from './app.js';
 const FB_URL=''; /* paste your Facebook Page link between the quotes so Check Out opens your page */
-const ckey=()=>'wk_cart_'+(user?user.email:'guest');
-let items=getCartRaw(),edit=false;
-function getCartRaw(){try{return JSON.parse(localStorage.getItem(ckey())||'[]')}catch(e){return[]}}
-const peso=n=>'₱'+n.toLocaleString('en-PH');
-function save(){try{localStorage.setItem(ckey(),JSON.stringify(items))}catch(e){}}
-function back(){if(LIVE&&document.referrer.indexOf(location.host)>-1)history.back();else nav('shop.html')}
-function thumb(h){return `<svg viewBox="0 0 200 220" aria-hidden="true"><path d="M62 84C62 14 138 14 138 84" fill="none" stroke="${sh(h,.22)}" stroke-width="9" stroke-linecap="round"/><path d="M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z" fill="${h}" stroke="${sh(h,.2)}" stroke-width="2"/><path d="M28 80H172" stroke="${sh(h,.3)}" stroke-width="5" stroke-linecap="round"/></svg>`}
+let user=null,items=[],imgs={},edit=false;
 const find=id=>items.find(x=>x.id===id);
-function tog(id){const f=find(id);f.sel=!f.sel;save();render()}
-function allTog(){const a=items.every(x=>x.sel);items.forEach(x=>x.sel=!a);save();render()}
-function qty(id,d){const f=find(id);f.q=Math.max(1,f.q+d);save();render()}
-function del(id){items=items.filter(x=>x.id!==id);save();render()}
-function delSel(){items=items.filter(x=>!x.sel);save();render()}
-function chk(){const s=items.filter(x=>x.sel);if(!s.length)return;
- const lines=s.map((x,i)=>`${i+1}. ${x.name} (Outside: ${x.o.n}, Inside: ${x.i.n}) x${x.q} - ${peso(x.price*x.q)}`);
- const msg=`Hi Warm Knots! I'd like to order:\n${lines.join('\n')}\nTotal: ${peso(s.reduce((t,x)=>t+x.price*x.q,0))}`+(user?`\nName: ${user.name} (${user.email})`:'');
+const save=()=>saveCart(user.uid,items).catch(()=>toast('Could not save your cart. Please check your connection.'));
+const thumb=x=>x.o?`<svg viewBox="0 0 200 220" aria-hidden="true"><path d="M62 84C62 14 138 14 138 84" fill="none" stroke="${sh(x.o.h,.22)}" stroke-width="9" stroke-linecap="round"/><path d="M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z" fill="${x.o.h}" stroke="${sh(x.o.h,.2)}" stroke-width="2"/><path d="M28 80H172" stroke="${sh(x.o.h,.3)}" stroke-width="5" stroke-linecap="round"/></svg>`:(imgs[x.pid]?`<img src="${imgs[x.pid]}" alt="">`:'');
+window.tog=id=>{const f=find(id);f.sel=!f.sel;save();render()};
+window.allTog=()=>{const a=items.every(x=>x.sel);items.forEach(x=>x.sel=!a);save();render()};
+window.qty=(id,d)=>{const f=find(id);f.q=Math.max(1,f.q+d);save();render()};
+window.del=id=>{items=items.filter(x=>x.id!==id);save();render()};
+window.delSel=()=>{items=items.filter(x=>!x.sel);save();render()};
+window.toggleEdit=()=>{edit=!edit;render()};
+window.chk=()=>{const s=items.filter(x=>x.sel);if(!s.length)return;
+ const lines=s.map((x,i)=>`${i+1}. ${x.name}${x.o?` (Outside: ${x.o.n}, Inside: ${x.i.n})`:''} x${x.q} - ${peso(x.price*x.q)}`);
+ const msg=`Hi Warm Knots! I'd like to order:\n${lines.join('\n')}\nTotal: ${peso(s.reduce((t,x)=>t+x.price*x.q,0))}\nName: ${user.name} (${user.email})`;
  try{navigator.clipboard.writeText(msg)}catch(e){}
  if(FB_URL)window.open(FB_URL,'_blank');
- toast(FB_URL?'Order details copied. Paste them in our Facebook chat!':'Order details copied. Send them to our Facebook Page to place your order.')}
-const row=x=>`<div class="it"><input type="checkbox" ${x.sel?'checked':''} onchange="tog('${x.id}')" aria-label="Select item"><div class="th">${thumb(x.o.h)}</div><div class="inf"><div class="nm">${esc(x.name)}</div><div class="var"><i class="dot" style="background:${x.o.h}"></i>Outside: ${esc(x.o.n)} &middot; <i class="dot" style="background:${x.i.h}"></i>Inside: ${esc(x.i.n)}</div><div class="pq"><span class="pr">${peso(x.price)}</span>${edit?`<button class="dl" onclick="del('${x.id}')">Delete</button>`:`<span class="qt"><button onclick="qty('${x.id}',-1)" aria-label="Less">&minus;</button><span>${x.q}</span><button onclick="qty('${x.id}',1)" aria-label="More">+</button></span>`}</div></div></div>`;
+ toast(FB_URL?'Order details copied. Paste them in our Facebook chat!':'Order details copied. Send them to our Facebook Page to place your order.')};
+const row=x=>`<div class="it"><input type="checkbox" ${x.sel?'checked':''} onchange="tog('${x.id}')" aria-label="Select item"><div class="th">${thumb(x)}</div><div class="inf"><div class="nmx">${esc(x.name)}</div><div class="var">${x.o?`<i class="dot" style="background:${x.o.h}"></i>Outside: ${esc(x.o.n)} &middot; <i class="dot" style="background:${x.i.h}"></i>Inside: ${esc(x.i.n)}`:''}</div><div class="pq"><span class="pr">${peso(x.price)}</span>${edit?`<button class="dl" onclick="del('${x.id}')">Delete</button>`:`<span class="qt"><button onclick="qty('${x.id}',-1)" aria-label="Less">&minus;</button><span>${x.q}</span><button onclick="qty('${x.id}',1)" aria-label="More">+</button></span>`}</div></div></div>`;
 function render(){
- if(LIVE&&!user)return;
  const sel=items.filter(x=>x.sel),total=sel.reduce((s,x)=>s+x.price*x.q,0),n=items.reduce((s,x)=>s+x.q,0),selN=sel.reduce((s,x)=>s+x.q,0),all=items.length&&items.every(x=>x.sel);
- document.getElementById('root').innerHTML=`<header><button class="back" onclick="back()" aria-label="Back">${BACK}</button><span class="ttl">Shopping Cart${n?` (${n})`:''}</span>${items.length?`<button class="edit" onclick="edit=!edit;render()">${edit?'Done':'Edit'}</button>`:''}</header>
-<main>${items.length?items.map(row).join(''):`<div class="empty"><h2>Your cart is empty</h2><p>Items you add will show up here.</p><button class="go" onclick="nav('shop.html')">Start shopping</button></div>`}</main>
-${items.length?`<div class="bar"><label class="all"><input type="checkbox" ${all?'checked':''} onchange="allTog()"> All</label><div class="tot">Total <b>${peso(total)}</b></div><button class="co" ${sel.length?'':'disabled'} onclick="${edit?'delSel()':'chk()'}">${edit?`Delete (${sel.length})`:`Check Out (${selN})`}</button></div>`:''}`}
-render();
+ document.getElementById('root').innerHTML=`<header><button class="back" onclick="history.length>1?history.back():location.href='shop.html'" aria-label="Back">${BACK}</button><span class="ttl">Shopping Cart${n?` (${n})`:''}</span>${items.length?`<button class="edit" onclick="toggleEdit()">${edit?'Done':'Edit'}</button>`:''}</header>
+<main>${items.length?items.map(row).join(''):`<div class="empty"><h2>Your cart is empty</h2><p>Items you add will show up here.</p><button class="btn" onclick="location.href='shop.html'">Start shopping</button></div>`}</main>
+${items.length?`<div class="bar"><label class="all"><input type="checkbox" ${all?'checked':''} onchange="allTog()"> All</label><div class="tot">Total <b>${peso(total)}</b></div><button class="btn" ${sel.length?'':'disabled'} onclick="${edit?'delSel()':'chk()'}">${edit?`Delete (${sel.length})`:`Check Out (${selN})`}</button></div>`:''}`}
+gate(async u=>{
+ user=u;document.getElementById('root').innerHTML='<main><p class="mut">Loading your cart...</p></main>';
+ try{items=await getCart(u.uid)}catch(e){items=[]}
+ render();
+ try{(await loadProducts()).forEach(p=>{imgs[p.id]=p.image});render()}catch(e){}
+});
 </script></body></html>
