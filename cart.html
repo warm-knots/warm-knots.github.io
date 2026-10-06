@@ -21,13 +21,13 @@ header .edit{background:none;border:0;color:var(--fg);font:15px system-ui,sans-s
 </style></head>
 <body class="hasbar"><div id="root"></div>
 <script type="module">
-import {gate,getCart,saveCart,loadProducts,esc,peso,shade as sh,BACK,toast} from './app.js';
+import {gate,getCart,saveCart,loadProducts,loadColorPhotos,esc,peso,shade as sh,BACK,toast} from './app.js';
 const FB_URL=''; /* paste your Facebook Page link between the quotes so Check Out opens your page */
-let user=null,items=[],imgs={},edit=false;
+let user=null,items=[],imgs={},cph={},edit=false;
 const find=id=>items.find(x=>x.id===id);
 const save=()=>saveCart(user.uid,items).catch(()=>toast('Could not save your cart. Please check your connection.'));
 const vars=x=>x.variants||(x.o?[{g:'Outside',n:x.o.n,h:x.o.h},{g:'Inside',n:x.i.n,h:x.i.h}]:[]);
-const thumb=x=>{if(x.pid==='tote'){const h=(vars(x)[0]||{h:'#f2e6d0'}).h;return `<svg viewBox="0 0 200 220" aria-hidden="true"><path d="M62 84C62 14 138 14 138 84" fill="none" stroke="${sh(h,.22)}" stroke-width="9" stroke-linecap="round"/><path d="M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z" fill="${h}" stroke="${sh(h,.2)}" stroke-width="2"/><path d="M28 80H172" stroke="${sh(h,.3)}" stroke-width="5" stroke-linecap="round"/></svg>`}return imgs[x.pid]?`<img src="${imgs[x.pid]}" alt="">`:''};
+const thumb=x=>{const v0=vars(x)[0],ph=v0&&v0.id&&cph[x.pid]&&cph[x.pid][v0.id];if(ph)return `<img src="${ph}" alt="">`;if(x.pid==='tote'){const h=(vars(x)[0]||{h:'#f2e6d0'}).h;return `<svg viewBox="0 0 200 220" aria-hidden="true"><path d="M62 84C62 14 138 14 138 84" fill="none" stroke="${sh(h,.22)}" stroke-width="9" stroke-linecap="round"/><path d="M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z" fill="${h}" stroke="${sh(h,.2)}" stroke-width="2"/><path d="M28 80H172" stroke="${sh(h,.3)}" stroke-width="5" stroke-linecap="round"/></svg>`}return imgs[x.pid]?`<img src="${imgs[x.pid]}" alt="">`:''};
 window.tog=id=>{const f=find(id);f.sel=!f.sel;save();render()};
 window.allTog=()=>{const a=items.every(x=>x.sel);items.forEach(x=>x.sel=!a);save();render()};
 window.qty=(id,d)=>{const f=find(id);f.q=Math.max(1,f.q+d);save();render()};
@@ -51,5 +51,6 @@ gate(async u=>{
  try{items=await getCart(u.uid)}catch(e){items=[]}
  render();
  try{(await loadProducts()).forEach(p=>{imgs[p.id]=p.image});render()}catch(e){}
+ try{const pids=[...new Set(items.filter(x=>vars(x).some(v=>v.id)).map(x=>x.pid))];await Promise.all(pids.map(async pid=>{cph[pid]=await loadColorPhotos(pid)}));render()}catch(e){}
 });
 </script></body></html>
