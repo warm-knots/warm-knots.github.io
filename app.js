@@ -99,6 +99,19 @@ export async function seedAll(){
  await setDoc(doc(db,'settings','seeded'),{done:true,at:Date.now()});seeded=true;
 }
 
+// ---- site logo (editable in admin; falls back to built-in LOGO) ----
+let _logoCache=null;
+export async function loadLogo(){
+ if(_logoCache!==null)return _logoCache;
+ try{const s=await getDoc(doc(db,'settings','site'));if(s.exists()&&s.data().logo)_logoCache=s.data().logo;else _logoCache=LOGO}
+ catch(e){_logoCache=LOGO}
+ return _logoCache;
+}
+export async function saveLogo(image){
+ await setDoc(doc(db,'settings','site'),{logo:image},{merge:true});
+ _logoCache=image;
+}
+
 // ---- carts (saved online under each person's Google account) ----
 export async function getCart(uid){const s=await getDoc(doc(db,'carts',uid));return s.exists()?(s.data().items||[]):[]}
 export const saveCart=(uid,items)=>setDoc(doc(db,'carts',uid),{items:JSON.parse(JSON.stringify(items))});
