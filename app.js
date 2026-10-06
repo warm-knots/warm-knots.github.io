@@ -55,14 +55,23 @@ export const colorGroups=p=>((p&&p.options)||[]).filter(g=>g&&g.colors&&g.colors
 export async function isSeeded(){if(seeded!==null)return seeded;try{seeded=(await getDoc(doc(db,'settings','seeded'))).exists()}catch(e){loadErr=e.code||e.message||'unknown error';seeded=false}return seeded}
 export async function loadCategories(){
  loadErr='';const sd=await isSeeded();if(!sd)return defaultCats();
- try{return (await getDocs(collection(db,'categories'))).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(a.createdAt||0)-(b.createdAt||0))}
+ try{return (await getDocs(collection(db,'categories'))).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{
+  const pa=a.position!=null?a.position:(a.createdAt||0), pb=b.position!=null?b.position:(b.createdAt||0);
+  return pa-pb;
+ })}
  catch(e){loadErr=e.code||e.message||'unknown error';return[]}
 }
 export async function loadProducts(){
  const sd=await isSeeded();let list=[];
  try{list=(await getDocs(collection(db,'products'))).docs.map(d=>({id:d.id,...d.data()}))}catch(e){loadErr=e.code||e.message||'unknown error'}
  if(!sd&&!list.find(p=>p.id==='tote'))list.push(defaultTote());
- return list.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+ return list.sort((a,b)=>{
+  const hasA=a.position!=null, hasB=b.position!=null;
+  if(hasA&&hasB) return a.position-b.position;
+  if(hasA) return -1;
+  if(hasB) return 1;
+  return (b.createdAt||0)-(a.createdAt||0);
+ });
 }
 export async function getProduct(id){
  const sd=await isSeeded();
