@@ -20,7 +20,7 @@
 </style></head>
 <body class="hasbar"><div id="root"></div>
 <script type="module">
-import {gate,getProduct,loadCategories,loadColorPhotos,colorGroups,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,esc,peso,BACK,toast} from './app.js';
+import {gate,getProduct,loadCategories,loadColorPhotos,colorGroups,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,esc,peso,BACK,HOME,toast} from './app.js';
 const id=new URLSearchParams(location.search).get('id');
 let user=null,p=null,groups=[],pick=[],photos={};
 const swatches=()=>groups.map((g,gi)=>`<div class="opt"><h3>${esc(g.label||'Color')}</h3><p class="mut">${esc(g.colors[pick[gi]].n)}</p>${g.colors.map((c,ci)=>`<button class="sw ${pick[gi]===ci?'on':''}" style="background:${c.h}" aria-label="${esc(c.n)}" onclick="choose(${gi},${ci})"></button>`).join('')}</div>`).join('');
@@ -39,7 +39,7 @@ window.addCart=async()=>{
 };
 gate(async u=>{
  user=u;const root=document.getElementById('root');
- root.innerHTML=`<header><button class="back" onclick="history.length>1?history.back():location.href='shop.html'" aria-label="Back">${BACK}</button><span class="ttl">Details</span>${cartBtn()}</header><main><p class="mut">Loading...</p></main>`;
+ root.innerHTML=`<header><button class="back" onclick="history.length>1?history.back():location.href='shop.html'" aria-label="Back">${BACK}</button><button class="back" onclick="location.href='shop.html'" aria-label="Home">${HOME}</button><span class="ttl">Details</span>${cartBtn()}</header><main><p class="mut">Loading...</p></main>`;
  initBadge(u.uid);
  p=id?await getProduct(id):null;
  if(!p){document.querySelector('main').innerHTML='<div class="empty"><h2>We could not find that product</h2><p><a href="shop.html">Back to the shop</a></p></div>';return}
