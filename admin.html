@@ -59,7 +59,7 @@ let user=null,cats=[],list=[],tab='products',pf=null,cf=null,loading=true,act={t
 // which category groups are expanded (persists across re-renders in this session)
 let openGroups=new Set();
 const $=id=>document.getElementById(id),root=$('root');
-const newPF=()=>({id:'',name:'',category:cats[0]?cats[0].id:'',price:'',description:'',stock:'',image:'',useColors:false,groups:[{label:'Color',colors:[]}],createdAt:0,designer:false,photos:{},dirty:{},orig:[]});
+const newPF=()=>({id:'',name:'',category:cats[0]?cats[0].id:'',price:'',description:'',stock:'',image:'',useColors:false,groups:[{label:'Color',colors:[]}],useReadyColors:false,readyGroups:[{label:'Color',colors:[]}],createdAt:0,designer:false,photos:{},dirty:{},orig:[]});
 const newCF=()=>({id:'',name:'',image:'',createdAt:0});
 const same=(a,b)=>a.h.toLowerCase()===b.h.toLowerCase();
 const HANDLE=`<span class="handle" aria-label="Drag to reorder"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect y="2" width="14" height="2" rx="1"/><rect y="6" width="14" height="2" rx="1"/><rect y="10" width="14" height="2" rx="1"/></svg></span>`;
@@ -74,7 +74,10 @@ async function refresh(){
 onUser(async u=>{user=u;if(isAdmin(u))await refresh();render()});
 // keep what is typed before redrawing the page
 function sync(){
- if(tab==='products'&&pf&&$('f_n')){pf.name=$('f_n').value;pf.category=$('f_c').value;pf.price=$('f_p').value;pf.description=$('f_d').value;pf.stock=$('f_stock')?$('f_stock').value:'';pf.useColors=$('f_u').checked;pf.groups.forEach((g,i)=>{const e=$('gl'+i);if(e)g.label=e.value;g.colors.forEach((col,ci)=>{const se=$('cs'+i+'_'+ci);if(se)col.stock=se.value})})}
+ if(tab==='products'&&pf&&$('f_n')){pf.name=$('f_n').value;pf.category=$('f_c').value;pf.price=$('f_p').value;pf.description=$('f_d').value;pf.stock=$('f_stock')?$('f_stock').value:'';
+  if(pf.designer){pf.useReadyColors=$('f_ru')?$('f_ru').checked:false;pf.readyGroups.forEach((g,i)=>{const e=$('rgl'+i);if(e)g.label=e.value;g.colors.forEach((col,ci)=>{const se=$('rcs'+i+'_'+ci);if(se)col.stock=se.value})});pf.groups.forEach((g,i)=>{const e=$('gl'+i);if(e)g.label=e.value})}
+  else{pf.useColors=$('f_u')?$('f_u').checked:false;pf.groups.forEach((g,i)=>{const e=$('gl'+i);if(e)g.label=e.value;g.colors.forEach((col,ci)=>{const se=$('cs'+i+'_'+ci);if(se)col.stock=se.value})})}
+ }
  if(tab==='cats'&&cf&&$('c_n'))cf.name=$('c_n').value;
 }
 window.setTab=t=>{sync();tab=t;act={t:tab==='cats'?'c':tab==='site'?'logo':'p',gi:0,ci:0};render()};
@@ -85,6 +88,8 @@ async function putPhoto(file){
  sync();let t=act.t;if(tab==='cats')t='c';else if(tab==='site')t='logo';else if(t==='c')t='p';
  try{
   if(t==='logo'){siteLogo=await resizeImage(file,400,.85);render();toast('Logo updated (not saved yet)');return}
+  if(t==='rcolor'){const c=pf.readyGroups[act.gi]&&pf.readyGroups[act.gi].colors[act.ci];
+   if(c){pf.photos[c.id]=await resizeImage(file,700,.7);pf.dirty[c.id]=1;render();toast('Photo added to '+c.n);return}t='p'}
   if(t==='color'){const c=pf.groups[act.gi]&&pf.groups[act.gi].colors[act.ci];
    if(c){pf.photos[c.id]=await resizeImage(file,700,.7);pf.dirty[c.id]=1;render();toast('Photo added to '+c.n);return}t='p'}
   if(t==='c'){cf.image=await resizeImage(file,700);render();toast('Picture added');return}
@@ -100,11 +105,22 @@ document.addEventListener('paste',async e=>{
 });
 window.rmPhoto=(gi,ci)=>{sync();const c=pf.groups[gi].colors[ci];delete pf.photos[c.id];pf.dirty[c.id]=1;render()};
 // ---- products ----
-window.editP=async id=>{const p=list.find(x=>x.id===id);const gs=(p.options&&p.options.length)?JSON.parse(JSON.stringify(p.options)):[{label:'Color',colors:[]}];
+window.editP=async id=>{const p=list.find(x=>x.id===id);
+ const isDes=!!p.designer;
+ let gs,rgs;
+ if(isDes){
+  // customize groups = Outside/Inside from options
+  gs=(p.options&&p.options.length)?JSON.parse(JSON.stringify(p.options)):[{label:'Outside',colors:[]},{label:'Inside',colors:[]}];
+  rgs=(p.readyOptions&&p.readyOptions.length)?JSON.parse(JSON.stringify(p.readyOptions)):[{label:'Color',colors:[]}];
+ }else{
+  gs=(p.options&&p.options.length)?JSON.parse(JSON.stringify(p.options)):[{label:'Color',colors:[]}];
+  rgs=[{label:'Color',colors:[]}];
+ }
  gs.forEach(g=>g.colors.forEach(c=>{if(!c.id)c.id=newId()}));
+ rgs.forEach(g=>g.colors.forEach(c=>{if(!c.id)c.id=newId()}));
  const st0=p.stock!=null?p.stock:(p.soldOut?0:'');
- pf={id:p.id,name:p.name||'',category:p.category||'',price:p.price||'',description:p.description||'',stock:st0,image:p.image||'',useColors:gs.some(g=>g.colors.length),groups:gs,createdAt:p.createdAt||0,designer:!!p.designer,photos:{},dirty:{},orig:[],position:p.position};
- pf.orig=gs.flatMap(g=>g.colors.map(c=>c.id));
+ pf={id:p.id,name:p.name||'',category:p.category||'',price:p.price||'',description:p.description||'',stock:st0,image:p.image||'',useColors:!isDes&&gs.some(g=>g.colors.length),useReadyColors:isDes&&rgs.some(g=>g.colors&&g.colors.length),groups:gs,readyGroups:rgs,createdAt:p.createdAt||0,designer:isDes,photos:{},dirty:{},orig:[],position:p.position};
+ pf.orig=[...gs,...rgs].flatMap(g=>g.colors.map(c=>c.id));
  tab='products';act={t:'p',gi:0,ci:0};render();window.scrollTo(0,0);
  try{pf.photos=await loadColorPhotos(id);render()}catch(e){}};
 window.cancelP=()=>{pf=newPF();render()};
@@ -117,13 +133,28 @@ window.rmColor=(gi,ci)=>{sync();const r=pf.groups[gi].colors.splice(ci,1)[0];if(
 window.nameColor=(gi,ci,v)=>{pf.groups[gi].colors[ci].n=v.trim()||'Color'};
 window.addGroup=()=>{sync();pf.groups.push({label:'',colors:[]});render()};
 window.rmGroup=gi=>{sync();pf.groups[gi].colors.forEach(c=>{if(pf.photos[c.id]){delete pf.photos[c.id];pf.dirty[c.id]=1}});pf.groups.splice(gi,1);if(!pf.groups.length)pf.groups=[{label:'Color',colors:[]}];render()};
-window.presetBag=()=>{sync();pf.groups=[{label:'Outside',colors:[]},{label:'Inside',colors:[]}];pf.useColors=true;render()};
+window.presetBag=()=>{sync();pf.groups=[{label:'Outside',colors:[]},{label:'Inside',colors:[]}];if(!pf.designer)pf.useColors=true;render()};
+window.togReadyColor=(gi,pi)=>{sync();const g=pf.readyGroups[gi],c=PALETTE[pi],k=g.colors.findIndex(x=>same(x,c));
+ if(k>=0){const r=g.colors.splice(k,1)[0];if(pf.photos[r.id]){delete pf.photos[r.id];pf.dirty[r.id]=1}}else g.colors.push({id:newId(),n:c.n,h:c.h,stock:''});render()};
+window.addReadyCustom=gi=>{sync();const n=$('rcn'+gi).value.trim()||'Custom',h=$('rch'+gi).value;const g=pf.readyGroups[gi];if(!g.colors.some(x=>same(x,{h})))g.colors.push({id:newId(),n,h,stock:''});render()};
+window.rmReadyColor=(gi,ci)=>{sync();const r=pf.readyGroups[gi].colors.splice(ci,1)[0];if(pf.photos[r.id]){delete pf.photos[r.id];pf.dirty[r.id]=1}render()};
+window.nameReadyColor=(gi,ci,v)=>{pf.readyGroups[gi].colors[ci].n=v.trim()||'Color'};
+window.rmReadyPhoto=(gi,ci)=>{sync();const col=pf.readyGroups[gi].colors[ci];delete pf.photos[col.id];pf.dirty[col.id]=1;render()};
 window.saveP=async()=>{
  sync();const name=pf.name.trim();
  if(!name)return toast('Please enter a product name');
  if(!pf.image)return toast('Please add a photo');
  if(!pf.category)return toast('Please choose a category (add one in the Categories tab first)');
- const options=pf.useColors?pf.groups.map(g=>({label:(g.label||'').trim()||'Color',colors:g.colors.map(col=>{const cs=String(col.stock??'').trim();return {id:col.id,n:col.n,h:col.h,stock:cs===''?null:Math.max(0,Number(cs)||0)}})})).filter(g=>g.colors.length):[];
+ const mapCols=cols=>cols.map(col=>{const cs=String(col.stock??'').trim();return {id:col.id,n:col.n,h:col.h,stock:cs===''?null:Math.max(0,Number(cs)||0)}});
+ let options,readyOptions;
+ if(pf.designer){
+  // customize: Outside/Inside (no stock required on these)
+  options=pf.groups.map(g=>({label:(g.label||'').trim()||'Color',colors:g.colors.map(col=>({id:col.id,n:col.n,h:col.h}))})).filter(g=>g.colors.length);
+  readyOptions=pf.useReadyColors?pf.readyGroups.map(g=>({label:(g.label||'').trim()||'Color',colors:mapCols(g.colors)})).filter(g=>g.colors.length):[];
+ }else{
+  options=pf.useColors?pf.groups.map(g=>({label:(g.label||'').trim()||'Color',colors:mapCols(g.colors)})).filter(g=>g.colors.length):[];
+  readyOptions=[];
+ }
  const isNew=!pf.id;
  // new products go to the top of their category
  let position=pf.position;
@@ -135,11 +166,12 @@ window.saveP=async()=>{
  const stockRaw=String(pf.stock??'').trim();
  const stock=stockRaw===''?null:Math.max(0,Number(stockRaw)||0);
  const p={id:pf.id||'p'+Date.now(),name,category:pf.category,price:Number(pf.price)||0,description:pf.description.trim(),image:pf.image,stock,soldOut:stock===0,options,createdAt:pf.createdAt||Date.now(),position};
- if(pf.designer)p.designer=true;
+ if(pf.designer){p.designer=true;p.readyOptions=readyOptions}
+ else if('readyOptions' in (list.find(x=>x.id===p.id)||{})){/* leave */}
  $('sv').disabled=true;
  try{
   await saveProduct(p);
-  const cur=new Set(options.flatMap(g=>g.colors.map(c=>c.id)));
+  const cur=new Set([...options,...(readyOptions||[])].flatMap(g=>g.colors.map(c=>c.id)));
   for(const cid of Object.keys(pf.dirty)){if(cur.has(cid)){if(pf.photos[cid])await saveColorPhoto(p.id,cid,pf.photos[cid]);else await deleteColorPhoto(p.id,cid)}}
   for(const cid of pf.orig){if(!cur.has(cid))await deleteColorPhoto(p.id,cid)}
   toast('Saved!');list=await loadProducts();pf=newPF();act={t:'p',gi:0,ci:0};render();window.scrollTo(0,0)}
@@ -260,11 +292,18 @@ window.rmLogo=()=>{siteLogo='';render()};
 
 // ---- screens ----
 const slot=(t,gi,ci,img,cls,label)=>{const k=t+'|'+gi+'|'+ci;return `<div class="slot ${cls} ${keyOf(act)===k?'act':''}" data-k="${k}" onclick="actv('${t}',${gi},${ci})" ondragover="event.preventDefault()" ondrop="dropP(event,'${t}',${gi},${ci})">${img?`<img src="${img}" alt="">`:`<span>${label}</span>`}</div>`};
+function readyGroupHtml(g,gi){
+ return `<div class="grp"><label style="margin-top:0">Group name</label><input type="text" id="rgl${gi}" value="${esc(g.label)}" placeholder="e.g. Color">
+<label>Tap colors for ready-made bags</label><div class="pal">${PALETTE.map((c,pi)=>`<button class="pc ${g.colors.some(x=>same(x,c))?'on':''}" style="background:${c.h}" title="${esc(c.name||c.n)}" aria-label="${esc(c.n)}" onclick="togReadyColor(${gi},${pi})"></button>`).join('')}</div>
+<label>Or add your own color</label><div class="cust"><input type="color" id="rch${gi}" value="#c8553d"><input type="text" id="rcn${gi}" placeholder="Color name"><button class="btn alt sm" onclick="addReadyCustom(${gi})">Add</button></div>
+${g.colors.length?`<label>Photo & stock for each ready-made color</label><div class="cards">${g.colors.map((c,ci)=>`<div class="cc">${slot('rcolor',gi,ci,pf.photos[c.id],'sm2','Tap or paste photo')}<div class="nm2"><i style="background:${c.h}"></i><input type="text" value="${esc(c.n)}" onchange="nameReadyColor(${gi},${ci},this.value)" aria-label="Color name"></div><label style="margin:8px 0 2px;font-size:12px">Stock (leave empty = unlimited)</label><input type="number" id="rcs${gi}_${ci}" min="0" step="1" inputmode="numeric" value="${c.stock!=null&&c.stock!==''?esc(c.stock):''}" placeholder="e.g. 5" style="padding:8px;font-size:15px"><div class="row2" style="margin-top:8px"><button type="button" class="btn alt sm" style="flex:1;padding:8px 10px;font-size:13px" onclick="document.getElementById('rkf${gi}_${ci}').click()">Choose photo</button>${pf.photos[c.id]?`<button type="button" onclick="rmReadyPhoto(${gi},${ci})">Remove photo</button>`:''}<button type="button" onclick="rmReadyColor(${gi},${ci})">Remove color</button></div><input type="file" accept="image/*" id="rkf${gi}_${ci}" style="display:none" onchange="onFile(this,'rcolor',${gi},${ci})"></div>`).join('')}</div>`:'<p class="hint">No colors chosen yet.</p>'}
+</div>`;
+}
 function groupHtml(g,gi){
  return `<div class="grp"><label style="margin-top:0">Group name (what customers see, e.g. Outside, Inside, Color)</label><input type="text" id="gl${gi}" value="${esc(g.label)}" placeholder="e.g. Outside">
 <label>Tap colors to offer</label><div class="pal">${PALETTE.map((c,pi)=>`<button class="pc ${g.colors.some(x=>same(x,c))?'on':''}" style="background:${c.h}" title="${esc(c.name||c.n)}" aria-label="${esc(c.n)}" onclick="togColor(${gi},${pi})"></button>`).join('')}</div>
 <label>Or add your own color</label><div class="cust"><input type="color" id="ch${gi}" value="#c8553d"><input type="text" id="cn${gi}" placeholder="Color name"><button class="btn alt sm" onclick="addCustom(${gi})">Add</button></div>
-${g.colors.length?`<label>Photo & stock for each color</label><div class="cards">${g.colors.map((c,ci)=>`<div class="cc">${slot('color',gi,ci,pf.photos[c.id],'sm2','Tap or paste photo')}<div class="nm2"><i style="background:${c.h}"></i><input type="text" value="${esc(c.n)}" onchange="nameColor(${gi},${ci},this.value)" aria-label="Color name"></div><label style="margin:8px 0 2px;font-size:12px">Stock (leave empty = unlimited)</label><input type="number" id="cs${gi}_${ci}" min="0" step="1" inputmode="numeric" value="${c.stock!=null&&c.stock!==''?esc(c.stock):''}" placeholder="e.g. 5" style="padding:8px;font-size:15px"><div class="row2" style="margin-top:8px"><button type="button" class="btn alt sm" style="flex:1;padding:8px 10px;font-size:13px" onclick="document.getElementById('kf${gi}_${ci}').click()">Choose photo</button>${pf.photos[c.id]?`<button type="button" onclick="rmPhoto(${gi},${ci})">Remove photo</button>`:''}<button type="button" onclick="rmColor(${gi},${ci})" aria-label="Remove color">Remove color</button></div><input type="file" accept="image/*" id="kf${gi}_${ci}" style="display:none" onchange="onFile(this,'color',${gi},${ci})"></div>`).join('')}</div>`:'<p class="hint">No colors chosen yet.</p>'}
+${g.colors.length?`<label>Photo for each color${pf.designer?'':' & stock'}</label><div class="cards">${g.colors.map((c,ci)=>`<div class="cc">${slot('color',gi,ci,pf.photos[c.id],'sm2','Tap or paste photo')}<div class="nm2"><i style="background:${c.h}"></i><input type="text" value="${esc(c.n)}" onchange="nameColor(${gi},${ci},this.value)" aria-label="Color name"></div>${pf.designer?'':`<label style="margin:8px 0 2px;font-size:12px">Stock (leave empty = unlimited)</label><input type="number" id="cs${gi}_${ci}" min="0" step="1" inputmode="numeric" value="${c.stock!=null&&c.stock!==''?esc(c.stock):''}" placeholder="e.g. 5" style="padding:8px;font-size:15px">`}<div class="row2" style="margin-top:8px"><button type="button" class="btn alt sm" style="flex:1;padding:8px 10px;font-size:13px" onclick="document.getElementById('kf${gi}_${ci}').click()">Choose photo</button>${pf.photos[c.id]?`<button type="button" onclick="rmPhoto(${gi},${ci})">Remove photo</button>`:''}<button type="button" onclick="rmColor(${gi},${ci})" aria-label="Remove color">Remove color</button></div><input type="file" accept="image/*" id="kf${gi}_${ci}" style="display:none" onchange="onFile(this,'color',${gi},${ci})"></div>`).join('')}</div>`:'<p class="hint">No colors chosen yet.</p>'}
 ${pf.groups.length>1?`<div class="acts"><button class="btn alt sm dng" onclick="rmGroup(${gi})">Remove this group</button></div>`:''}</div>`;
 }
 function productRow(p){
@@ -287,7 +326,13 @@ ${siteLogo?`<div style="margin-top:14px;display:flex;align-items:center;gap:12px
 }
 
 function productsView(){
- const colorsUI=pf.useColors?`${pf.groups.map(groupHtml).join('')}<div class="acts"><button class="btn alt sm" onclick="addGroup()">Add another color group</button><button class="btn alt sm" onclick="presetBag()">Set up Outside + Inside (for bags)</button></div>`:'';
+ const colorsUI=pf.designer?'' : (pf.useColors?`${pf.groups.map(groupHtml).join('')}<div class="acts"><button class="btn alt sm" onclick="addGroup()">Add another color group</button><button class="btn alt sm" onclick="presetBag()">Set up Outside + Inside (for bags)</button></div>`:'');
+ const readyUI=pf.designer?(pf.useReadyColors?`${pf.readyGroups.map(readyGroupHtml).join('')}`:''):'';
+ const customUI=pf.designer?`<div class="card" style="border-style:dashed;margin-top:0"><h2 style="font-size:16px">Customize (Outside + Inside)</h2>
+<p class="hint" style="margin-top:0">Customers see these colors only after they tap <b>Customize</b> on the product page. Custom bags are made to order (no stock).</p>
+${pf.groups.map(groupHtml).join('')}
+<div class="acts"><button class="btn alt sm" onclick="presetBag()">Reset to Outside + Inside</button><button class="btn alt sm" onclick="addGroup()">Add another group</button></div>
+</div>`:'';
  // group products by category, following category order
  const groups=[];
  for(const cat of cats){
@@ -315,9 +360,9 @@ function productsView(){
 <label>Category</label><select id="f_c">${pf.category&&cats.some(c=>c.id===pf.category)?'':'<option value="">Choose a category</option>'}${cats.map(c=>`<option value="${esc(c.id)}" ${pf.category===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>
 <label>Price (pesos)</label><input type="number" id="f_p" min="0" step="1" inputmode="numeric" value="${esc(pf.price)}" placeholder="e.g. 120">
 <label>Description and other details</label><textarea id="f_d" placeholder="Size, materials, care...">${esc(pf.description)}</textarea>
-<label>Stock (leave empty = unlimited)</label><input type="number" id="f_stock" min="0" step="1" inputmode="numeric" value="${pf.stock!=null&&pf.stock!==''?esc(pf.stock):''}" placeholder="e.g. 10">
-<p class="hint">When stock is 0 the product shows as sold out. If you use color choices, set stock per color below (product stock is used when colors are off).</p>
-<label class="chk"><input type="checkbox" id="f_u" ${pf.useColors?'checked':''} onchange="sync();render()"> Let customers choose colors</label>${colorsUI}
+<label>Stock for ready-made${pf.designer?' bags':''} (leave empty = unlimited)</label><input type="number" id="f_stock" min="0" step="1" inputmode="numeric" value="${pf.stock!=null&&pf.stock!==''?esc(pf.stock):''}" placeholder="e.g. 10">
+<p class="hint">${pf.designer?'This stock is for the ready-made bag shown first. Custom color combos are made to order and do not use stock.':'When stock is 0 the product shows as sold out. If you use color choices, set stock per color below (product stock is used when colors are off).'}</p>
+${pf.designer?`<label class="chk"><input type="checkbox" id="f_ru" ${pf.useReadyColors?'checked':''} onchange="sync();render()"> Let customers choose colors on the ready-made bag</label>${readyUI}${customUI}`:`<label class="chk"><input type="checkbox" id="f_u" ${pf.useColors?'checked':''} onchange="sync();render()"> Let customers choose colors</label>${colorsUI}`}
 <div class="acts"><button class="btn" id="sv" onclick="saveP()">${pf.id?'Save changes':'Add product'}</button>${pf.id?'<button class="btn alt" onclick="cancelP()">Cancel</button>':''}</div></div>
 <div class="card"><h2>Your products (${list.length})</h2>
 <p class="hint" style="margin-top:0;margin-bottom:12px">Tap a category to expand. Drag the ☰ handle to change order inside a category.</p>
