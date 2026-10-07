@@ -28,6 +28,7 @@
 <body class="hasbar"><div id="root"></div>
 <script type="module">
 import {gate,getProduct,loadColorPhotos,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,shade as sh,esc,peso,BACK,toast,readyStock,colorStock} from './app.js';
+const TID=new URLSearchParams(location.search).get('id')||'tote';
 let user=null,P=null,OUT=[],IN=[],OL='Outside',IL='Inside',fixedOut=false,fixedIn=false,photos={},mode='ready',rp=0;
 const st={o:0,i:0};
 function bag(side,b){const o=side==='out',s=sh(b,.2),body='M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z';
@@ -44,7 +45,7 @@ const stockHtml=()=>{const a=avail();return a<=0?'<span class="sold">Sold out</s
 window.pickReady=i=>{rp=i;render()};
 window.customize=()=>{mode='custom';render();window.scrollTo(0,0)};
 window.readyBack=()=>{mode='ready';render();window.scrollTo(0,0)};
-window.goBack=()=>{if(mode==='custom')readyBack();else location.href='category.html?c='+encodeURIComponent(P?P.category:'')};
+window.goBack=()=>{if(mode==='custom')readyBack();else location.href=P&&P.category?'category.html?c='+encodeURIComponent(P.category):'shop.html'};
 async function put(item){
  try{const c=await getCart(user.uid),f=c.find(x=>x.id===item.id);
   if(item.ready){const a=avail();if(f&&f.q+1>a){toast('Only '+a+' in stock, and you already have '+f.q+' in your cart');return}}
@@ -55,11 +56,11 @@ async function put(item){
 window.addReady=()=>{
  if(avail()<=0)return toast('Sold out');
  const rc=RC(),c=rc[rp];
- put({id:'tote-ready'+(c?'-'+c.n:''),pid:'tote',name:P.name,price:P.price,q:1,sel:true,ready:true,variants:c?[{g:'Color',n:c.n,h:c.h,id:c.id||''}]:[]});
+ put({id:'tote-'+P.id+'-ready'+(c?'-'+c.n:''),pid:P.id,name:P.name,price:P.price,q:1,sel:true,ready:true,variants:c?[{g:'Color',n:c.n,h:c.h,id:c.id||''}]:[]});
 };
 window.addCart=()=>{
  const o=OUT[st.o],i=IN[st.i];
- put({id:'tote-'+o.n+'-'+i.n,pid:'tote',name:P.name+' (Customized)',price:P.price,q:1,sel:true,variants:[{g:OL,n:o.n,h:o.h,id:o.id||''},{g:IL,n:i.n,h:i.h,id:i.id||''}]});
+ put({id:'tote-'+P.id+'-'+o.n+'-'+i.n,pid:P.id,name:P.name+' (Customized)',price:P.price,q:1,sel:true,custom:true,variants:[{g:OL,n:o.n,h:o.h,id:o.id||''},{g:IL,n:i.n,h:i.h,id:i.id||''}]});
 };
 const head=t=>`<header><button class="back" onclick="goBack()" aria-label="Back">${BACK}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
 function readyHtml(){
@@ -84,9 +85,9 @@ gate(async u=>{
  user=u;
  document.getElementById('root').innerHTML=head('Loading...')+'<main><p class="mut">Loading...</p></main>';
  initBadge(u.uid);
- P=await getProduct('tote');
+ P=await getProduct(TID);
  if(!P){document.getElementById('root').innerHTML=head('Not available')+'<main><div class="empty"><h2>This product is not available right now</h2><p><a href="shop.html">Back to the shop</a></p></div></main>';return}
- photos=await loadColorPhotos('tote');
+ photos=await loadColorPhotos(P.id);
  const og=(P.options||[]);const a=og[0]&&og[0].colors&&og[0].colors.length?og[0]:null,b=og[1]&&og[1].colors&&og[1].colors.length?og[1]:null;
  OUT=a?a.colors:[{n:'Natural',h:'#f2e6d0',id:''}];IN=b?b.colors:[{n:'Standard',h:'#9db39a',id:''}];
  OL=(og[0]&&og[0].label)||'Outside';IL=(og[1]&&og[1].label)||'Inside';fixedOut=!a;fixedIn=!b;
