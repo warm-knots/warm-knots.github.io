@@ -11,7 +11,7 @@
 .frame{display:flex;border:1px solid #cdbfae;border-radius:14px;overflow:hidden;background:#fff}
 .half{flex:1;min-width:0;display:flex;flex-direction:column}.half+.half{border-left:1px solid #cdbfae}
 .pane{flex:1;min-height:280px;display:flex;align-items:center;justify-content:center;background:#f3ebdf}
-.pane svg{width:78%;height:auto}.pane img{width:100%;height:auto;display:block}
+.pane svg{width:78%;height:auto}.pane img{width:100%;height:auto;display:block;object-fit:contain}
 .cap2{text-align:center;font:13px system-ui,sans-serif;color:var(--mut);padding:7px 0;border-top:1px solid #cdbfae;background:#fff}
 .opts{font-family:system-ui,sans-serif}.opts h3{font-size:15px;margin:0 0 4px}.opts h3:not(:first-child){margin-top:18px}.opts .mut{margin:0 0 8px}
 .sw{width:38px;height:38px;border-radius:50%;border:1px solid #cdbfae;padding:0;margin:0 8px 8px 0;cursor:pointer}.sw.on{outline:3px solid var(--acc);outline-offset:2px}
@@ -27,8 +27,9 @@
 <script type="module">
 import {gate,getProduct,loadColorPhotos,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,shade as sh,esc,peso,BACK,HOME,toast} from './app.js';
 let user=null,P=null,OUT=[],IN=[],OL='Outside',IL='Inside',fixedOut=false,fixedIn=false,photos={};
-const st={o:0,i:0};
-let mode='ready'; // 'ready' = ready-made product view, 'custom' = Outside/Inside builder
+let READY=[],RL='Color';
+const st={o:0,i:0},rst={c:0};
+let mode='ready';
 
 function bag(side,b){const o=side==='out',s=sh(b,.2),body='M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z';
  return `<svg viewBox="0 0 200 220" role="img" aria-label="${o?'Crochet outside':'Waterproof inside'} of the tote bag"><defs><pattern id="pp-${side}" width="10" height="8" patternUnits="userSpaceOnUse"><rect width="10" height="8" fill="${b}"/><path d="M1 1L5 7L9 1" fill="none" stroke="${s}" stroke-width="1.3"/></pattern></defs>
@@ -38,27 +39,38 @@ ${o?'':`<path d="M28 80H100L60 210H45Q39 210 38 204Z" fill="#fff" opacity=".22"/
 const pane=side=>{const c=side==='out'?OUT[st.o]:IN[st.i];return photos[c.id]?`<img src="${photos[c.id]}" alt="${esc(c.n)}">`:bag(side,c.h)};
 const sws=(k,L)=>L.map((c,i)=>`<button class="sw ${st[k]===i?'on':''}" style="background:${c.h}" aria-label="${esc(c.n)}" onclick="pick('${k}',${i})"></button>`).join('');
 
-const readySoldOut=()=>P.stock===0||!!P.soldOut;
+const colorStock=c=>c.stock==null||c.stock===''?null:Number(c.stock);
+const readySoldOut=()=>{
+ if(READY.length){const s=colorStock(READY[rst.c]);if(s===0)return true;if(s!=null)return false}
+ return P.stock===0||!!P.soldOut;
+};
 const stockLabel=()=>{
+ if(READY.length){const s=colorStock(READY[rst.c]);if(s===0)return 'Sold out';if(s!=null)return s+' left'}
  if(P.stock==null||P.stock==='')return '';
  if(P.stock===0)return 'Sold out';
  return P.stock+' left';
 };
+const readyImage=()=>{
+ if(READY.length){const c=READY[rst.c];if(c&&photos[c.id])return photos[c.id]}
+ return P.image||'';
+};
 
 window.pick=(k,i)=>{st[k]=i;render()};
+window.pickReady=i=>{rst.c=i;render()};
 window.setMode=m=>{mode=m;render();window.scrollTo(0,0)};
 
 window.addCart=async()=>{
  if(mode==='ready'){
   if(readySoldOut())return toast('This bag is sold out');
-  const id='tote-ready';
+  const col=READY.length?READY[rst.c]:null;
+  const id=col?'tote-ready-'+col.n:'tote-ready';
+  const variants=col?[{g:RL,n:col.n,h:col.h,id:col.id||''}]:[{g:'Style',n:'Ready-made',h:'',id:''}];
   try{const c=await getCart(user.uid),f=c.find(x=>x.id===id);
-   f?f.q++:c.push({id,pid:'tote',name:P.name,price:P.price,q:1,sel:true,variants:[{g:'Style',n:'Ready-made',h:'',id:''}]});
+   f?f.q++:c.push({id,pid:'tote',name:P.name,price:P.price,q:1,sel:true,variants});
    await saveCart(user.uid,c);setBadge(cartTotalQty(c));toast('Added to your cart')}
   catch(e){toast('Could not add to cart. Please try again.')}
   return;
  }
- // custom – made to order, no stock limit
  const o=OUT[st.o],i=IN[st.i],id='tote-'+o.n+'-'+i.n;
  const variants=[{g:OL,n:o.n,h:o.h,id:o.id||''},{g:IL,n:i.n,h:i.h,id:i.id||''}];
  try{const c=await getCart(user.uid),f=c.find(x=>x.id===id);
@@ -70,12 +82,13 @@ window.addCart=async()=>{
 const head=t=>`<header><button class="back" onclick="location.href='category.html?c=${esc(P?P.category:'')}'" aria-label="Back">${BACK}</button><button class="back" onclick="location.href='shop.html'" aria-label="Home">${HOME}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
 
 function renderReady(){
- const so=readySoldOut();
- const sl=stockLabel();
+ const so=readySoldOut(),sl=stockLabel(),img=readyImage();
+ const colorUI=READY.length?`<div class="opts" style="margin-top:14px"><h3>${esc(RL)}</h3><p class="mut">${esc(READY[rst.c].n)}${(()=>{const s=colorStock(READY[rst.c]);return s==null?'':s===0?' · Sold out':' · '+s+' left'})()}</p>${READY.map((c,i)=>{const s=colorStock(c),dis=s===0;return `<button class="sw ${rst.c===i?'on':''}" style="background:${c.h};${dis?'opacity:.35':''}" aria-label="${esc(c.n)}" onclick="pickReady(${i})"></button>`}).join('')}</div>`:'';
  return head(P.name)+`<main><div class="wrap">
-<div class="frame"><div class="half"><div class="pane">${P.image?`<img src="${P.image}" alt="${esc(P.name)}">`:bag('out','#f2e6d0')}</div></div></div>
+<div class="frame"><div class="half"><div class="pane">${img?`<img src="${img}" alt="${esc(P.name)}">`:bag('out','#f2e6d0')}</div></div></div>
 <div class="info">${so?'<span class="sold">Sold out</span>':''}<h2>${esc(P.name)}</h2><div class="price">${peso(P.price)}</div>
-<div class="mut">${sl?esc(sl):'Ready-made · in stock'}</div>
+<div class="mut">${sl?esc(sl):'Ready-made'}</div>
+${colorUI}
 <div class="desc">${esc(P.description||'')}</div>
 <button class="btn alt modebtn" onclick="setMode('custom')">Customize colors</button>
 <p class="note">Want your own Outside + Inside color combo? Tap Customize — custom bags are made to order.</p>
@@ -110,6 +123,9 @@ gate(async u=>{
  const og=(P.options||[]);const a=og[0]&&og[0].colors&&og[0].colors.length?og[0]:null,b=og[1]&&og[1].colors&&og[1].colors.length?og[1]:null;
  OUT=a?a.colors:[{n:'Natural',h:'#f2e6d0',id:''}];IN=b?b.colors:[{n:'Standard',h:'#9db39a',id:''}];
  OL=(og[0]&&og[0].label)||'Outside';IL=(og[1]&&og[1].label)||'Inside';fixedOut=!a;fixedIn=!b;
+ const rg=(P.readyOptions||[]).filter(g=>g&&g.colors&&g.colors.length);
+ READY=rg.length?rg[0].colors:[];
+ RL=(rg[0]&&rg[0].label)||'Color';
  mode='ready';
  render();
 });
