@@ -69,7 +69,7 @@ gate(async u=>{
  initBadge(u.uid);
  p=id?await getProduct(id):null;
  if(!p){document.querySelector('main').innerHTML='<div class="empty"><h2>We could not find that product</h2><p><a href="shop.html">Back to the shop</a></p></div>';return}
- if(p.designer){location.replace('tote.html');return}
+ if(p.designer||p.id==='tote'){location.replace('tote.html');return}
  groups=colorGroups(p);pick=groups.map(()=>0);
  if(groups.length)photos=await loadColorPhotos(p.id);
  const cats=await loadCategories(),cat=cats.find(c=>c.id===p.category);
