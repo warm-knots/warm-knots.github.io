@@ -53,6 +53,18 @@ const defaultTote=()=>({id:'tote',name:'Reversible Tote Bag',category:'bags',pri
 let seeded=null,loadErr='';
 export const getLoadError=()=>loadErr;
 export const colorGroups=p=>((p&&p.options)||[]).filter(g=>g&&g.colors&&g.colors.length);
+// ---- stock: a number on the product, or on each color when colors are on (no number saved yet = not limited) ----
+export const colorStock=c=>c&&typeof c.stock==='number'?c.stock:Infinity;
+export function readyStock(p){ // how many of the ready-made / normal product can be bought right now
+ if(!p)return Infinity;
+ const rc=p.readyColors||[];
+ if(p.designer&&rc.length)return rc.reduce((s,c)=>s+colorStock(c),0);
+ if(!p.designer){const gs=colorGroups(p);if(gs.length)return Math.min(...gs.map(g=>g.colors.reduce((s,c)=>s+colorStock(c),0)))}
+ if(typeof p.stock==='number')return p.stock;
+ return p.soldOut?0:Infinity;
+}
+export const isSoldOut=p=>readyStock(p)<=0;
+export const allColors=p=>[...((p&&p.options)||[]).flatMap(g=>g.colors||[]),...((p&&p.readyColors)||[])];
 export async function isSeeded(){if(seeded!==null)return seeded;try{seeded=(await getDoc(doc(db,'settings','seeded'))).exists()}catch(e){loadErr=e.code||e.message||'unknown error';seeded=false}return seeded}
 export async function loadCategories(){
  loadErr='';const sd=await isSeeded();if(!sd)return defaultCats();
