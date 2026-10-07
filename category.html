@@ -10,7 +10,7 @@
 <script type="module">
 import {isSoldOut,gate,loadProducts,loadCategories,getLoadError,cartBtn,initBadge,esc,peso,BACK} from './app.js';
 const q=new URLSearchParams(location.search).get('c')||'';
-window.open_=(id,designer)=>location.href=designer?'tote.html':'product.html?id='+encodeURIComponent(id);
+window.open_=(id,designer)=>location.href=designer?'tote.html?id='+encodeURIComponent(id):'product.html?id='+encodeURIComponent(id);
 gate(async user=>{
  const head=t=>`<header><button class="back" onclick="location.href='shop.html'" aria-label="Back to categories">${BACK}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
  document.getElementById('root').innerHTML=head('Shop')+'<main><p class="mut">Loading...</p></main>';
