@@ -62,6 +62,7 @@ const $=id=>document.getElementById(id),root=$('root');
 const newPF=()=>({id:'',name:'',category:cats[0]?cats[0].id:'',price:'',description:'',stock:'',image:'',useColors:false,groups:[{label:'Color',colors:[]}],useReadyColors:false,readyGroups:[{label:'Color',colors:[]}],createdAt:0,designer:false,photos:{},dirty:{},orig:[]});
 const newCF=()=>({id:'',name:'',image:'',createdAt:0});
 const same=(a,b)=>a.h.toLowerCase()===b.h.toLowerCase();
+const isBagProduct=p=>!!(p&&(p.designer||p.id==='tote'));
 const HANDLE=`<span class="handle" aria-label="Drag to reorder"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect y="2" width="14" height="2" rx="1"/><rect y="6" width="14" height="2" rx="1"/><rect y="10" width="14" height="2" rx="1"/></svg></span>`;
 window.out=()=>signOutUser().then(()=>render());
 window.login=async()=>{try{await signIn()}catch(e){const c=e.code||'';if(c!=='auth/popup-closed-by-user'&&c!=='auth/cancelled-popup-request')toast('Sign-in failed. Please try again.')}};
@@ -75,8 +76,9 @@ onUser(async u=>{user=u;if(isAdmin(u))await refresh();render()});
 // keep what is typed before redrawing the page
 function sync(){
  if(tab==='products'&&pf&&$('f_n')){pf.name=$('f_n').value;pf.category=$('f_c').value;pf.price=$('f_p').value;pf.description=$('f_d').value;pf.stock=$('f_stock')?$('f_stock').value:'';
-  if(pf.designer){pf.useReadyColors=$('f_ru')?$('f_ru').checked:false;pf.readyGroups.forEach((g,i)=>{const e=$('rgl'+i);if(e)g.label=e.value;g.colors.forEach((col,ci)=>{const se=$('rcs'+i+'_'+ci);if(se)col.stock=se.value})});pf.groups.forEach((g,i)=>{const e=$('gl'+i);if(e)g.label=e.value})}
-  else{pf.useColors=$('f_u')?$('f_u').checked:false;pf.groups.forEach((g,i)=>{const e=$('gl'+i);if(e)g.label=e.value;g.colors.forEach((col,ci)=>{const se=$('cs'+i+'_'+ci);if(se)col.stock=se.value})})}
+  if($('f_bag'))pf.designer=$('f_bag').checked;
+  if(pf.designer){pf.useReadyColors=$('f_ru')?$('f_ru').checked:false;(pf.readyGroups||[]).forEach((g,i)=>{const e=$('rgl'+i);if(e)g.label=e.value;g.colors.forEach((col,ci)=>{const se=$('rcs'+i+'_'+ci);if(se)col.stock=se.value})});(pf.groups||[]).forEach((g,i)=>{const e=$('gl'+i);if(e)g.label=e.value})}
+  else{pf.useColors=$('f_u')?$('f_u').checked:false;(pf.groups||[]).forEach((g,i)=>{const e=$('gl'+i);if(e)g.label=e.value;g.colors.forEach((col,ci)=>{const se=$('cs'+i+'_'+ci);if(se)col.stock=se.value})})}
  }
  if(tab==='cats'&&cf&&$('c_n'))cf.name=$('c_n').value;
 }
@@ -106,7 +108,7 @@ document.addEventListener('paste',async e=>{
 window.rmPhoto=(gi,ci)=>{sync();const c=pf.groups[gi].colors[ci];delete pf.photos[c.id];pf.dirty[c.id]=1;render()};
 // ---- products ----
 window.editP=async id=>{const p=list.find(x=>x.id===id);
- const isDes=!!p.designer;
+ const isDes=isBagProduct(p);
  let gs,rgs;
  if(isDes){
   // customize groups = Outside/Inside from options
@@ -166,8 +168,7 @@ window.saveP=async()=>{
  const stockRaw=String(pf.stock??'').trim();
  const stock=stockRaw===''?null:Math.max(0,Number(stockRaw)||0);
  const p={id:pf.id||'p'+Date.now(),name,category:pf.category,price:Number(pf.price)||0,description:pf.description.trim(),image:pf.image,stock,soldOut:stock===0,options,createdAt:pf.createdAt||Date.now(),position};
- if(pf.designer){p.designer=true;p.readyOptions=readyOptions}
- else if('readyOptions' in (list.find(x=>x.id===p.id)||{})){/* leave */}
+ if(pf.designer||p.id==='tote'){p.designer=true;p.readyOptions=readyOptions||[]}
  $('sv').disabled=true;
  try{
   await saveProduct(p);
@@ -328,7 +329,7 @@ ${siteLogo?`<div style="margin-top:14px;display:flex;align-items:center;gap:12px
 function productsView(){
  const colorsUI=pf.designer?'' : (pf.useColors?`${pf.groups.map(groupHtml).join('')}<div class="acts"><button class="btn alt sm" onclick="addGroup()">Add another color group</button><button class="btn alt sm" onclick="presetBag()">Set up Outside + Inside (for bags)</button></div>`:'');
  const readyUI=pf.designer?(pf.useReadyColors?`${pf.readyGroups.map(readyGroupHtml).join('')}`:''):'';
- const customUI=pf.designer?`<div class="card" style="border-style:dashed;margin-top:0"><h2 style="font-size:16px">Customize (Outside + Inside)</h2>
+ const customUI=pf.designer?`<div class="card" style="border-style:dashed;margin-top:0"><h2 style="font-size:16px">2. Customize (Outside + Inside)</h2>
 <p class="hint" style="margin-top:0">Customers see these colors only after they tap <b>Customize</b> on the product page. Custom bags are made to order (no stock).</p>
 ${pf.groups.map(groupHtml).join('')}
 <div class="acts"><button class="btn alt sm" onclick="presetBag()">Reset to Outside + Inside</button><button class="btn alt sm" onclick="addGroup()">Add another group</button></div>
@@ -360,9 +361,15 @@ ${pf.groups.map(groupHtml).join('')}
 <label>Category</label><select id="f_c">${pf.category&&cats.some(c=>c.id===pf.category)?'':'<option value="">Choose a category</option>'}${cats.map(c=>`<option value="${esc(c.id)}" ${pf.category===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>
 <label>Price (pesos)</label><input type="number" id="f_p" min="0" step="1" inputmode="numeric" value="${esc(pf.price)}" placeholder="e.g. 120">
 <label>Description and other details</label><textarea id="f_d" placeholder="Size, materials, care...">${esc(pf.description)}</textarea>
-<label>Stock for ready-made${pf.designer?' bags':''} (leave empty = unlimited)</label><input type="number" id="f_stock" min="0" step="1" inputmode="numeric" value="${pf.stock!=null&&pf.stock!==''?esc(pf.stock):''}" placeholder="e.g. 10">
+<label>Stock${pf.designer?' for ready-made bags':''} (leave empty = unlimited)</label><input type="number" id="f_stock" min="0" step="1" inputmode="numeric" value="${pf.stock!=null&&pf.stock!==''?esc(pf.stock):''}" placeholder="e.g. 10">
 <p class="hint">${pf.designer?'This stock is for the ready-made bag shown first. Custom color combos are made to order and do not use stock.':'When stock is 0 the product shows as sold out. If you use color choices, set stock per color below (product stock is used when colors are off).'}</p>
-${pf.designer?`<label class="chk"><input type="checkbox" id="f_ru" ${pf.useReadyColors?'checked':''} onchange="sync();render()"> Let customers choose colors on the ready-made bag</label>${readyUI}${customUI}`:`<label class="chk"><input type="checkbox" id="f_u" ${pf.useColors?'checked':''} onchange="sync();render()"> Let customers choose colors</label>${colorsUI}`}
+<label class="chk"><input type="checkbox" id="f_bag" ${pf.designer?'checked':''} onchange="sync();pf.designer=this.checked;if(pf.designer&&(!pf.groups||pf.groups.length<2)){pf.groups=[{label:'Outside',colors:[]},{label:'Inside',colors:[]}]};if(!pf.readyGroups)pf.readyGroups=[{label:'Color',colors:[]}];render()"> This is the reversible tote (ready-made first, then Customize)</label>
+${pf.designer?`<div class="grp" style="margin-top:14px;border-color:var(--acc)"><b style="display:block;margin-bottom:8px;font:600 15px Georgia,serif">1. Ready-made bag (shown first)</b>
+<p class="hint" style="margin:0 0 8px">Main photo above is used here. Stock applies to ready-made only.</p>
+<label class="chk"><input type="checkbox" id="f_ru" ${pf.useReadyColors?'checked':''} onchange="sync();render()"> Let customers choose colors on the ready-made bag</label>
+${readyUI}
+</div>
+${customUI}`:`<label class="chk"><input type="checkbox" id="f_u" ${pf.useColors?'checked':''} onchange="sync();render()"> Let customers choose colors</label>${colorsUI}`}
 <div class="acts"><button class="btn" id="sv" onclick="saveP()">${pf.id?'Save changes':'Add product'}</button>${pf.id?'<button class="btn alt" onclick="cancelP()">Cancel</button>':''}</div></div>
 <div class="card"><h2>Your products (${list.length})</h2>
 <p class="hint" style="margin-top:0;margin-bottom:12px">Tap a category to expand. Drag the ☰ handle to change order inside a category.</p>
