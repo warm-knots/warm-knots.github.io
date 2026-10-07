@@ -23,13 +23,39 @@
 import {gate,getProduct,loadCategories,loadColorPhotos,colorGroups,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,esc,peso,BACK,HOME,toast} from './app.js';
 const id=new URLSearchParams(location.search).get('id');
 let user=null,p=null,groups=[],pick=[],photos={};
-const swatches=()=>groups.map((g,gi)=>`<div class="opt"><h3>${esc(g.label||'Color')}</h3><p class="mut">${esc(g.colors[pick[gi]].n)}</p>${g.colors.map((c,ci)=>`<button class="sw ${pick[gi]===ci?'on':''}" style="background:${c.h}" aria-label="${esc(c.n)}" onclick="choose(${gi},${ci})"></button>`).join('')}</div>`).join('');
+const colorStock=c=>c.stock==null||c.stock===''?null:Number(c.stock);
+const productSoldOut=()=>{
+ if(groups.length){
+  // sold out only if every color in every group has stock 0
+  return groups.every(g=>g.colors.every(c=>colorStock(c)===0));
+ }
+ return p.stock===0||!!p.soldOut;
+};
+const selectionSoldOut=()=>{
+ if(groups.length){
+  return groups.some((g,gi)=>colorStock(g.colors[pick[gi]])===0);
+ }
+ return p.stock===0||!!p.soldOut;
+};
+const stockHint=()=>{
+ if(groups.length){
+  const stocks=groups.map((g,gi)=>colorStock(g.colors[pick[gi]])).filter(s=>s!=null);
+  if(!stocks.length)return '';
+  if(stocks.some(s=>s===0))return 'Sold out';
+  return Math.min(...stocks)+' left';
+ }
+ if(p.stock==null||p.stock==='')return '';
+ if(p.stock===0)return 'Sold out';
+ return p.stock+' left';
+};
+const swatches=()=>groups.map((g,gi)=>`<div class="opt"><h3>${esc(g.label||'Color')}</h3><p class="mut">${esc(g.colors[pick[gi]].n)}${(()=>{const s=colorStock(g.colors[pick[gi]]);return s==null?'':s===0?' · Sold out':' · '+s+' left'})()}</p>${g.colors.map((c,ci)=>{const s=colorStock(c),dis=s===0;return `<button class="sw ${pick[gi]===ci?'on':''}" style="background:${c.h};${dis?'opacity:.35':''}" aria-label="${esc(c.n)}${dis?' (sold out)':''}" onclick="choose(${gi},${ci})"></button>`}).join('')}</div>`).join('');
 const view=()=>{const hp=groups.map((g,gi)=>gi).filter(gi=>groups[gi].colors.some(c=>photos[c.id]));
  const img=gi=>photos[groups[gi].colors[pick[gi]].id]||p.image;
  if(hp.length>=2)return `<div class="frame">${hp.slice(0,2).map(gi=>`<div class="half"><div class="pane"><img class="big" src="${img(gi)}" alt="${esc(groups[gi].label||'')}"></div><div class="cap2">${esc(groups[gi].label||'Color')}: ${esc(groups[gi].colors[pick[gi]].n)}</div></div>`).join('')}</div>`;
  return `<div class="frame"><div class="half"><div class="pane"><img class="big" src="${hp.length?img(hp[0]):p.image}" alt="${esc(p.name)}"></div></div></div>`};
-window.choose=(gi,ci)=>{pick[gi]=ci;document.getElementById('opts').innerHTML=swatches();document.getElementById('view').innerHTML=view()};
+window.choose=(gi,ci)=>{pick[gi]=ci;document.getElementById('opts').innerHTML=swatches();document.getElementById('view').innerHTML=view();const bar=document.querySelector('.bar .btn');if(bar){const so=selectionSoldOut();bar.disabled=so;bar.textContent=so?'Sold out':'Add to cart'}const sh=document.getElementById('stockhint');if(sh)sh.textContent=stockHint()};
 window.addCart=async()=>{
+ if(selectionSoldOut())return toast('That option is sold out');
  const variants=groups.map((g,gi)=>({g:g.label||'Color',n:g.colors[pick[gi]].n,h:g.colors[pick[gi]].h,id:g.colors[pick[gi]].id||''}));
  const cid='p-'+p.id+variants.map(v=>'-'+v.n).join('');
  try{const c=await getCart(user.uid),f=c.find(x=>x.id===cid);
@@ -47,7 +73,8 @@ gate(async u=>{
  groups=colorGroups(p);pick=groups.map(()=>0);
  if(groups.length)photos=await loadColorPhotos(p.id);
  const cats=await loadCategories(),cat=cats.find(c=>c.id===p.category);
- document.querySelector('main').innerHTML=`<div class="pw"><div id="view">${view()}</div><div class="info">${p.soldOut?'<span class="sold">Sold out</span>':''}<h2>${esc(p.name)}</h2><div class="price">${peso(p.price)}</div><div class="mut">${esc(cat?cat.name:'')}</div><div id="opts">${swatches()}</div><div class="desc">${esc(p.description||'')}</div></div></div>`;
- root.insertAdjacentHTML('beforeend',`<div class="bar"><div class="pp">Price<b>${peso(p.price)}</b></div><button class="btn" ${p.soldOut?'disabled':''} onclick="addCart()">${p.soldOut?'Sold out':'Add to cart'}</button></div>`);
+ const so=selectionSoldOut();
+ document.querySelector('main').innerHTML=`<div class="pw"><div id="view">${view()}</div><div class="info">${productSoldOut()?'<span class="sold">Sold out</span>':''}<h2>${esc(p.name)}</h2><div class="price">${peso(p.price)}</div><div class="mut">${esc(cat?cat.name:'')}${stockHint()?` · <span id="stockhint">${stockHint()}</span>`:'<span id="stockhint"></span>'}</div><div id="opts">${swatches()}</div><div class="desc">${esc(p.description||'')}</div></div></div>`;
+ root.insertAdjacentHTML('beforeend',`<div class="bar"><div class="pp">Price<b>${peso(p.price)}</b></div><button class="btn" ${so?'disabled':''} onclick="addCart()">${so?'Sold out':'Add to cart'}</button></div>`);
 });
 </script></body></html>
