@@ -67,6 +67,12 @@ const newPF=()=>({id:'',name:'',category:cats[0]?cats[0].id:'',price:'',descript
 const newCF=()=>({id:'',name:'',image:'',createdAt:0});
 const same=(a,b)=>a.h.toLowerCase()===b.h.toLowerCase();
 const groupAt=gi=>gi<0?pf.readyG:pf.groups[gi]; // gi -1 = the ready-made colors of the tote
+// any product in the Bags category gets the ready-made + Customize setup
+const bagCat=id=>{const c=cats.find(x=>x.id===id);return !!c&&(c.id==='bags'||/\bbags?\b/i.test(c.name||''))};
+const isDes=()=>!!pf.designer||bagCat(pf.category);
+const ensureDes=()=>{if(!isDes()||pf.groups.length>=2)return;
+ if(pf.groups.length===1&&pf.groups[0].label==='Color'&&!pf.groups[0].colors.length)pf.groups[0].label='Outside';
+ while(pf.groups.length<2)pf.groups.push({label:['Outside','Inside'][pf.groups.length],colors:[]})};
 const COARSE=!!(window.matchMedia&&matchMedia('(pointer:coarse)').matches);
 const PHL=COARSE?'Tap to choose a photo':'Click, then Ctrl+V to paste';
 const HANDLE=`<span class="handle" aria-label="Drag to reorder"><svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect y="2" width="14" height="2" rx="1"/><rect y="6" width="14" height="2" rx="1"/><rect y="10" width="14" height="2" rx="1"/></svg></span>`;
@@ -109,7 +115,7 @@ document.addEventListener('paste',async e=>{
 window.rmPhoto=(gi,ci)=>{sync();const c=groupAt(gi).colors[ci];delete pf.photos[c.id];pf.dirty[c.id]=1;render()};
 // ---- products ----
 window.editP=async id=>{const p=list.find(x=>x.id===id);const gs=(p.options&&p.options.length)?JSON.parse(JSON.stringify(p.options)):[{label:'Color',colors:[]}];
- if(p.designer)while(gs.length<2)gs.push({label:['Outside','Inside'][gs.length],colors:[]});
+ if(p.designer||bagCat(p.category))while(gs.length<2)gs.push({label:['Outside','Inside'][gs.length],colors:[]});
  const rg={label:'Color',colors:JSON.parse(JSON.stringify(p.readyColors||[]))};
  const fix=c=>{if(!c.id)c.id=newId();if(typeof c.stock!=='number')c.stock=''};
  gs.forEach(g=>g.colors.forEach(fix));rg.colors.forEach(fix);
@@ -136,7 +142,7 @@ window.saveP=async()=>{
  if(!pf.category)return toast('Please choose a category (add one in the Categories tab first)');
  const bad=v=>v===''||v==null||isNaN(Number(v))||Number(v)<0,num=v=>Math.floor(Number(v)),norm=cs=>cs.map(c=>({...c,stock:num(c.stock)}));
  let options=[],readyColors=[],stock=0;
- if(pf.designer){
+ if(isDes()){
   options=pf.groups.map(g=>({label:(g.label||'').trim()||'Color',colors:g.colors.map(({id,n,h})=>({id,n,h}))}));
   if(pf.useReady&&pf.readyG.colors.length){
    if(pf.readyG.colors.some(c=>bad(c.stock)))return toast('Please enter the stock for each ready-made color (0 if none)');
@@ -159,7 +165,7 @@ window.saveP=async()=>{
   position=minP-1;
  }
  const p={id:pf.id||'p'+Date.now(),name,category:pf.category,price:Number(pf.price)||0,description:pf.description.trim(),image:pf.image,stock,soldOut:stock<=0,options,createdAt:pf.createdAt||Date.now(),position};
- if(pf.designer){p.designer=true;p.readyColors=readyColors}
+ if(isDes()){p.designer=true;p.readyColors=readyColors}
  $('sv').disabled=true;
  try{
   await saveProduct(p);
@@ -285,12 +291,12 @@ window.rmLogo=()=>{siteLogo='';render()};
 // ---- screens ----
 const slot=(t,gi,ci,img,cls,label)=>{const k=t+'|'+gi+'|'+ci;return `<div class="slot ${cls} ${keyOf(act)===k?'act':''}" data-k="${k}" onclick="actv('${t}',${gi},${ci})" ondragover="event.preventDefault()" ondrop="dropP(event,'${t}',${gi},${ci})">${img?`<img src="${img}" alt="">`:`<span>${label}</span>`}</div>`};
 function groupHtml(g,gi){
- const rd=gi<0,showStock=rd||!pf.designer;
+ const rd=gi<0,showStock=rd||!isDes();
  return `<div class="grp">${rd?'':`<label style="margin-top:0">Group name (what customers see, e.g. Outside, Inside, Color)</label><input type="text" id="gl${gi}" value="${esc(g.label)}" placeholder="e.g. Outside">`}
 <label${rd?' style="margin-top:0"':''}>Tap colors to offer</label><div class="pal">${PALETTE.map((c,pi)=>`<button class="pc ${g.colors.some(x=>same(x,c))?'on':''}" style="background:${c.h}" title="${esc(c.name||c.n)}" aria-label="${esc(c.n)}" onclick="togColor(${gi},${pi})"></button>`).join('')}</div>
 <label>Or add your own color</label><div class="cust"><input type="color" id="ch${gi}" value="#c8553d"><input type="text" id="cn${gi}" placeholder="Color name"><button class="btn alt sm" onclick="addCustom(${gi})">Add</button></div>
 ${g.colors.length?`<label>${showStock?'Stock and photo for each color. ':'Photo for each color. '}Tap Choose photo to pick one from your phone or computer${COARSE?'':' (or click a box and press Ctrl+V)'}.</label><div class="cards">${g.colors.map((c,ci)=>`<div class="cc">${slot('color',gi,ci,pf.photos[c.id],'sm2',PHL)}<div class="nm2"><i style="background:${c.h}"></i><input type="text" value="${esc(c.n)}" onchange="nameColor(${gi},${ci},this.value)" aria-label="Color name"></div>${showStock?`<div class="stkrow"><span>Stock</span><input type="number" class="stk" min="0" step="1" inputmode="numeric" value="${c.stock===''||c.stock==null?'':c.stock}" placeholder="0" oninput="setStock(${gi},${ci},this.value)" aria-label="Stock"></div>`:''}<div class="row2"><button class="pick" onclick="document.getElementById('kf${gi}_${ci}').click()">Choose photo</button>${pf.photos[c.id]?`<button onclick="rmPhoto(${gi},${ci})">Remove photo</button>`:''}<button onclick="rmColor(${gi},${ci})" aria-label="Remove color">Remove color</button></div><input type="file" accept="image/*" id="kf${gi}_${ci}" style="display:none" onchange="onFile(this,'color',${gi},${ci})"></div>`).join('')}</div>`:'<p class="hint">No colors chosen yet.</p>'}
-${!rd&&!pf.designer&&pf.groups.length>1?`<div class="acts"><button class="btn alt sm dng" onclick="rmGroup(${gi})">Remove this group</button></div>`:''}</div>`;
+${!rd&&!isDes()&&pf.groups.length>1?`<div class="acts"><button class="btn alt sm dng" onclick="rmGroup(${gi})">Remove this group</button></div>`:''}</div>`;
 }
 function productRow(p){
  const c=cats.find(x=>x.id===p.category),n=(p.options||[]).reduce((s,g)=>s+(g.colors||[]).length,0),sk=readyStock(p),skt=sk<=0?'Sold out':(sk===Infinity?'Stock not set':'Stock: '+sk);
@@ -311,10 +317,11 @@ ${siteLogo?`<div style="margin-top:14px;display:flex;align-items:center;gap:12px
 }
 
 function productsView(){
+ ensureDes();
  const colorsUI=pf.useColors?`${pf.groups.map(groupHtml).join('')}<div class="acts"><button class="btn alt sm" onclick="addGroup()">Add another color group</button><button class="btn alt sm" onclick="presetBag()">Set up Outside + Inside (for bags)</button></div>`:'';
 const stockBox=`<label>Stock (how many you have; it shows as Sold out at 0)</label><input type="number" id="f_st" min="0" step="1" inputmode="numeric" value="${esc(pf.stock)}" placeholder="e.g. 10">`;
  const hasC=pf.groups.some(g=>g.colors.length);
- const stockUI=pf.designer
+ const stockUI=isDes()
   ?`${pf.useReady&&pf.readyG.colors.length?'':stockBox}<label class="chk"><input type="checkbox" id="f_ur" ${pf.useReady?'checked':''} onchange="sync();render()"> Let customers choose colors for the ready-made bag</label>${pf.useReady?groupHtml(pf.readyG,-1):''}
 <div class="sec">Customize colors (Outside + Inside)</div><p class="hint" style="margin-top:0">Customers pick from these when they tap Customize. Customized bags are made to order, so there is no stock count here.</p>${pf.groups.map((g,gi)=>groupHtml(g,gi)).join('')}`
   :`${pf.useColors&&hasC?'':stockBox}<label class="chk"><input type="checkbox" id="f_u" ${pf.useColors?'checked':''} onchange="sync();render()"> Let customers choose colors</label>${colorsUI}`;
@@ -342,7 +349,7 @@ const stockBox=`<label>Stock (how many you have; it shows as Sold out at 0)</lab
  return `<div class="card"><h2>${pf.id?'Edit product':'Add a product'}</h2>
 <label>Main photo</label>${slot('p',0,0,pf.image,'big',PHL)}<div class="acts" style="margin-top:8px"><button class="btn alt sm" onclick="document.getElementById('pf_file').click()">Choose photo from your device</button></div><div class="hint">On a computer you can also click the box and press Ctrl+V, or drop a file on it.</div><input type="file" accept="image/*" id="pf_file" style="display:none" onchange="onFile(this,'p')">
 <label>Name</label><input type="text" id="f_n" value="${esc(pf.name)}" placeholder="e.g. Bear keychain">
-<label>Category</label><select id="f_c">${pf.category&&cats.some(c=>c.id===pf.category)?'':'<option value="">Choose a category</option>'}${cats.map(c=>`<option value="${esc(c.id)}" ${pf.category===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>
+<label>Category</label><select id="f_c" onchange="sync();render()">${pf.category&&cats.some(c=>c.id===pf.category)?'':'<option value="">Choose a category</option>'}${cats.map(c=>`<option value="${esc(c.id)}" ${pf.category===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>
 <label>Price (pesos)</label><input type="number" id="f_p" min="0" step="1" inputmode="numeric" value="${esc(pf.price)}" placeholder="e.g. 120">
 <label>Description and other details</label><textarea id="f_d" placeholder="Size, materials, care...">${esc(pf.description)}</textarea>
 ${stockUI}
