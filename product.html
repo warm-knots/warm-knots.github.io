@@ -105,7 +105,7 @@ window.addCart=()=>{
  const o=OUT[st.o],i=IN[st.i];
  put({id:'tote-'+P.id+'-'+o.n+'-'+i.n,pid:P.id,name:P.name+' (Customized)',price:P.price,q:1,sel:true,custom:true,variants:[{g:OL,n:o.n,h:o.h,id:o.id||''},{g:IL,n:i.n,h:i.h,id:i.id||''}]});
 };
-const head=t=>`<header><button class="back" onclick="goBack()" aria-label="Back">${BACK}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
+const head=t=>`<header><button class="back" onclick="goBack()" aria-label="Back">${BACK}</button><button class="back" onclick="location.href='shop.html'" aria-label="Home">${HOME}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
 function readyHtml(){
  const rc=RC(),c=rc[rp],img=(c&&photos[c.id])||P.image,a=avail();
  return head(P.name)+`<main><div class="wrap"><div class="frame"><div class="half"><div class="pane"><img src="${img}" alt="${esc(P.name)}"></div></div></div>
