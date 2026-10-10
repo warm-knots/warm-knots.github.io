@@ -110,12 +110,12 @@ window.addCart=()=>{
 const head=t=>`<header><button class="back" onclick="goBack()" aria-label="Back">${BACK}</button><button class="back" onclick="location.href='shop.html'" aria-label="Home">${HOME}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
 function readyHtml(){
  const rc=RC(),c=rc[rp],img=(c&&photos[c.id])||P.image,a=avail();
- return head(P.name)+`<main><div class="wrap"><div class="frame"><div class="half"><div class="pane"><img src="${img}" alt="${esc(P.name)}"></div></div></div>
+ return head(P.name)+`<main><div class="wrap"><div><div class="frame"><div class="half"><div class="pane"><img src="${img}" alt="${esc(P.name)}"></div></div></div>
+<div class="note">Want your own color combination? Tap Customize to pick the outside and inside colors. Customized bags are made to order.</div>
+<div style="margin-top:12px"><button class="btn alt" style="width:100%" onclick="customize()">Customize</button></div></div>
 <div class="info"><h2>${esc(P.name)}</h2><div class="price">${peso(P.price)}</div>${stockHtml()}
 ${rc.length?`<div class="opts"><h3>Color</h3><p class="mut">${esc(c.n)}</p>${rc.map((k,i)=>`<button class="sw ${rp===i?'on':''} ${colorStock(k)<=0?'out':''}" style="background:${k.h}" aria-label="${esc(k.n)}" onclick="pickReady(${i})"></button>`).join('')}</div>`:''}
-<div class="desc">${esc(P.description||'')}</div>
-<div class="note">Want your own color combination? Tap Customize to pick the outside and inside colors. Customized bags are made to order.</div>
-<div style="margin-top:12px"><button class="btn alt" onclick="customize()">Customize</button></div></div></div></main>
+<div class="desc">${esc(P.description||'')}</div></div></div></main>
 <div class="bar"><div class="pp">Price<b>${peso(P.price)}</b></div><div class="qs"><button onclick="qstep(-1)" aria-label="Less">&minus;</button><span id="qn">${qn}</span><button onclick="qstep(1)" aria-label="More">+</button></div><button class="btn" ${a<=0?'disabled':''} onclick="addReady()">${a<=0?'Sold out':'Add to cart'}</button></div>`;
 }
 function customHtml(){
