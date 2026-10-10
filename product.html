@@ -8,9 +8,9 @@
 <style>
 .pw{display:grid;grid-template-columns:1fr;gap:20px}
 @media(min-width:720px){.pw{grid-template-columns:1fr 1fr;align-items:start}}
-.big{width:100%;height:auto;display:block}
+.big{width:100%;height:100%;object-fit:contain;display:block}
 .frame{display:flex;border:1px solid #cdbfae;border-radius:16px;overflow:hidden;background:#fff}.half{flex:1;min-width:0;display:flex;flex-direction:column}.half+.half{border-left:1px solid #cdbfae}
-.pane{flex:1;display:flex;align-items:center;justify-content:center;background:#f3ebdf}
+.pane{flex:none;aspect-ratio:1/1;overflow:hidden;display:flex;align-items:center;justify-content:center;background:#f3ebdf}
 .cap2{text-align:center;font:13px system-ui,sans-serif;color:var(--mut);padding:7px 0;border-top:1px solid #cdbfae}
 .info h2{font-size:24px;margin:0 0 6px}.price{color:var(--acc);font:600 22px system-ui,sans-serif;margin-bottom:12px}
 .desc{white-space:pre-line;font-size:16px;margin-top:14px}.sold{display:inline-block;background:#3a2e2a;color:#fff;font:600 12px system-ui,sans-serif;border-radius:999px;padding:3px 12px;margin-bottom:10px}
@@ -39,6 +39,8 @@ body.bag .stock{font:600 14px system-ui,sans-serif;color:#2f6b3a;margin:0 0 10px
 body.bag .sold{display:inline-block;background:#3a2e2a;color:#fff;font:600 12px system-ui,sans-serif;border-radius:999px;padding:3px 12px;margin-bottom:10px}
 body.bag .note{font:13px system-ui,sans-serif;color:var(--mut);margin-top:10px}
 body.bag .qs{display:flex;align-items:center;border:1px solid var(--bd);border-radius:999px;overflow:hidden;flex:none}body.bag .qs button{width:34px;height:40px;border:0;background:none;font:20px system-ui,sans-serif;color:var(--fg);cursor:pointer}body.bag .qs button:disabled{opacity:.35}body.bag .qs span{min-width:26px;text-align:center;font:600 15px system-ui,sans-serif}
+body.bag .pane{flex:none;aspect-ratio:1/1;min-height:0;overflow:hidden}
+body.bag .pane img{width:100%;height:100%;object-fit:contain;display:block}
 </style></head>
 <body class="hasbar"><div id="root"></div>
 <script type="module">
