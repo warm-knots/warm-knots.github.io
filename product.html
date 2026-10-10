@@ -20,10 +20,29 @@
 .stock{font:600 14px system-ui,sans-serif;color:#2f6b3a;margin:0 0 10px}.stock.low{color:#b26a00}
 .qs{display:flex;align-items:center;border:1px solid var(--bd);border-radius:999px;overflow:hidden;flex:none}.qs button{width:34px;height:40px;border:0;background:none;font:20px system-ui,sans-serif;color:var(--fg);cursor:pointer}.qs button:disabled{opacity:.35}.qs span{min-width:26px;text-align:center;font:600 15px system-ui,sans-serif}
 .bar .pp{flex:1;font-size:13px;color:var(--mut)}.bar .pp b{display:block;font-size:20px;color:var(--fg)}
+/* ---- Bags (ready-made + Customize) ---- */
+body.bag .wrap{display:grid;grid-template-columns:1fr;gap:18px}
+@media(min-width:720px){body.bag .wrap{grid-template-columns:1.1fr 1fr;align-items:start}}
+body.bag .frame{display:flex;border:1px solid #cdbfae;border-radius:14px;overflow:hidden;background:#fff}
+body.bag .half{flex:1;min-width:0;display:flex;flex-direction:column}body.bag .half+.half{border-left:1px solid #cdbfae}
+body.bag .pane{flex:1;min-height:280px;display:flex;align-items:center;justify-content:center;background:#f3ebdf}
+body.bag .pane svg{width:78%;height:auto}body.bag .pane img{width:100%;height:auto;display:block}
+body.bag .cap2{text-align:center;font:13px system-ui,sans-serif;color:var(--mut);padding:7px 0;border-top:1px solid #cdbfae;background:#fff}
+body.bag .opts{font-family:system-ui,sans-serif}body.bag .opts h3{font-size:15px;margin:0 0 4px}body.bag .opts h3:not(:first-child){margin-top:18px}body.bag .opts .mut{margin:0 0 8px}
+body.bag .sw{width:38px;height:38px;border-radius:50%;border:1px solid #cdbfae;padding:0;margin:0 8px 8px 0;cursor:pointer}body.bag .sw.on{outline:3px solid var(--acc);outline-offset:2px}
+body.bag .sum{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:12px 14px;margin-top:18px;font-size:15px}
+body.bag .desc{white-space:pre-line;font-size:15px;margin-top:16px}
+body.bag .bar .pp{flex:1;font-size:13px;color:var(--mut)}body.bag .bar .pp b{display:block;font-size:20px;color:var(--fg)}
+body.bag .sw.out{position:relative;opacity:.45}body.bag .sw.out::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:#3a2e2a;transform:rotate(45deg)}
+body.bag .info h2{font-size:24px;margin:0 0 6px}body.bag .price{color:var(--acc);font:600 22px system-ui,sans-serif;margin-bottom:8px}
+body.bag .stock{font:600 14px system-ui,sans-serif;color:#2f6b3a;margin:0 0 10px}body.bag .stock.low{color:#b26a00}
+body.bag .sold{display:inline-block;background:#3a2e2a;color:#fff;font:600 12px system-ui,sans-serif;border-radius:999px;padding:3px 12px;margin-bottom:10px}
+body.bag .note{font:13px system-ui,sans-serif;color:var(--mut);margin-top:10px}
+body.bag .qs{display:flex;align-items:center;border:1px solid var(--bd);border-radius:999px;overflow:hidden;flex:none}body.bag .qs button{width:34px;height:40px;border:0;background:none;font:20px system-ui,sans-serif;color:var(--fg);cursor:pointer}body.bag .qs button:disabled{opacity:.35}body.bag .qs span{min-width:26px;text-align:center;font:600 15px system-ui,sans-serif}
 </style></head>
 <body class="hasbar"><div id="root"></div>
 <script type="module">
-import {gate,getProduct,loadCategories,loadColorPhotos,colorGroups,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,esc,peso,BACK,HOME,toast,readyStock,colorStock} from './app.js';
+import {gate,getProduct,loadCategories,loadColorPhotos,colorGroups,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,shade as sh,esc,peso,BACK,HOME,toast,readyStock,colorStock} from './app.js';
 const id=new URLSearchParams(location.search).get('id');
 let user=null,p=null,groups=[],pick=[],photos={};
 const swatches=()=>groups.map((g,gi)=>`<div class="opt"><h3>${esc(g.label||'Color')}</h3><p class="mut">${esc(g.colors[pick[gi]].n)}</p>${g.colors.map((c,ci)=>`<button class="sw ${pick[gi]===ci?'on':''} ${colorStock(c)<=0?'out':''}" style="background:${c.h}" aria-label="${esc(c.n)}" onclick="choose(${gi},${ci})"></button>`).join('')}</div>`).join('');
@@ -48,13 +67,78 @@ window.addCart=async()=>{
   await saveCart(user.uid,c);setBadge(cartTotalQty(c));qn=1;document.getElementById('qn').textContent=1;toast('Added to your cart')}
  catch(e){toast('Could not add to cart. Please try again.')}
 };
+async function startBag(){
+ document.body.classList.add('bag');document.title=p.name+' | Warm Knots';
+ let qn=1,OUT=[],IN=[],OL='Outside',IL='Inside',fixedOut=false,fixedIn=false,photos={},mode='ready',rp=0;const P=p;
+const st={o:0,i:0};
+function bag(side,b){const o=side==='out',s=sh(b,.2),body='M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z';
+ return `<svg viewBox="0 0 200 220" role="img" aria-label="${o?'Crochet outside':'Waterproof inside'} of the tote bag"><defs><pattern id="pp-${side}" width="10" height="8" patternUnits="userSpaceOnUse"><rect width="10" height="8" fill="${b}"/><path d="M1 1L5 7L9 1" fill="none" stroke="${s}" stroke-width="1.3"/></pattern></defs>
+<path d="M62 84C62 14 138 14 138 84" fill="none" stroke="${sh(b,.22)}" stroke-width="9" stroke-linecap="round"/><path d="${body}" fill="${o?`url(#pp-${side})`:b}"/>
+${o?'':`<path d="M28 80H100L60 210H45Q39 210 38 204Z" fill="#fff" opacity=".22"/><rect x="72" y="150" width="56" height="20" rx="4" fill="${sh(b,.25)}" opacity=".5"/><text x="100" y="164" text-anchor="middle" font-size="11" font-family="sans-serif" fill="#fff">waterproof</text>`}
+<path d="M28 80H172" stroke="${sh(b,.3)}" stroke-width="5" stroke-linecap="round"/></svg>`}
+const pane=side=>{const c=side==='out'?OUT[st.o]:IN[st.i];return photos[c.id]?`<img src="${photos[c.id]}" alt="${esc(c.n)}">`:bag(side,c.h)};
+const sws=(k,L)=>L.map((c,i)=>`<button class="sw ${st[k]===i?'on':''}" style="background:${c.h}" aria-label="${esc(c.n)}" onclick="pick('${k}',${i})"></button>`).join('');
+window.pick=(k,i)=>{st[k]=i;render()};
+const RC=()=>P.readyColors||[];
+const avail=()=>{const rc=RC();return rc.length?colorStock(rc[rp]):readyStock(P)};
+const stockHtml=()=>{const a=avail();return a<=0?'<span class="sold">Sold out</span>':(a===Infinity?'':`<div class="stock ${a<=3?'low':''}">In stock: ${a}</div>`)};
+window.pickReady=i=>{rp=i;render()};
+const qmax=()=>mode==='ready'?Math.min(avail(),99):99;
+window.qstep=d=>{qn=Math.max(1,Math.min(qmax(),qn+d));document.getElementById('qn').textContent=qn};
+window.customize=()=>{mode='custom';qn=1;render();window.scrollTo(0,0)};
+window.readyBack=()=>{mode='ready';qn=1;render();window.scrollTo(0,0)};
+window.goBack=()=>{if(mode==='custom')readyBack();else location.href=P&&P.category?'category.html?c='+encodeURIComponent(P.category):'shop.html'};
+async function put(item){
+ try{const c=await getCart(user.uid),f=c.find(x=>x.id===item.id);
+  item.q=qn;
+  if(item.ready){const a=avail(),have=f?f.q:0;if(have+qn>a){toast(have?'Only '+a+' in stock, and you already have '+have+' in your cart':'Only '+a+' in stock');return}}
+  f?f.q+=qn:c.push(item);
+  await saveCart(user.uid,c);setBadge(cartTotalQty(c));qn=1;const q=document.getElementById('qn');if(q)q.textContent=1;toast('Added to your cart')}
+ catch(e){toast('Could not add to cart. Please try again.')}
+}
+window.addReady=()=>{
+ if(avail()<=0)return toast('Sold out');
+ const rc=RC(),c=rc[rp];
+ put({id:'tote-'+P.id+'-ready'+(c?'-'+c.n:''),pid:P.id,name:P.name,price:P.price,q:1,sel:true,ready:true,variants:c?[{g:'Color',n:c.n,h:c.h,id:c.id||''}]:[]});
+};
+window.addCart=()=>{
+ const o=OUT[st.o],i=IN[st.i];
+ put({id:'tote-'+P.id+'-'+o.n+'-'+i.n,pid:P.id,name:P.name+' (Customized)',price:P.price,q:1,sel:true,custom:true,variants:[{g:OL,n:o.n,h:o.h,id:o.id||''},{g:IL,n:i.n,h:i.h,id:i.id||''}]});
+};
+const head=t=>`<header><button class="back" onclick="goBack()" aria-label="Back">${BACK}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
+function readyHtml(){
+ const rc=RC(),c=rc[rp],img=(c&&photos[c.id])||P.image,a=avail();
+ return head(P.name)+`<main><div class="wrap"><div class="frame"><div class="half"><div class="pane"><img src="${img}" alt="${esc(P.name)}"></div></div></div>
+<div class="info"><h2>${esc(P.name)}</h2><div class="price">${peso(P.price)}</div>${stockHtml()}
+${rc.length?`<div class="opts"><h3>Color</h3><p class="mut">${esc(c.n)}</p>${rc.map((k,i)=>`<button class="sw ${rp===i?'on':''} ${colorStock(k)<=0?'out':''}" style="background:${k.h}" aria-label="${esc(k.n)}" onclick="pickReady(${i})"></button>`).join('')}</div>`:''}
+<div class="desc">${esc(P.description||'')}</div>
+<div class="note">Want your own color combination? Tap Customize to pick the outside and inside colors. Customized bags are made to order.</div>
+<div style="margin-top:12px"><button class="btn alt" onclick="customize()">Customize</button></div></div></div></main>
+<div class="bar"><div class="pp">Price<b>${peso(P.price)}</b></div><div class="qs"><button onclick="qstep(-1)" aria-label="Less">&minus;</button><span id="qn">${qn}</span><button onclick="qstep(1)" aria-label="More">+</button></div><button class="btn" ${a<=0?'disabled':''} onclick="addReady()">${a<=0?'Sold out':'Add to cart'}</button></div>`;
+}
+function customHtml(){
+ return head('Customize your bag')+`<main><div class="wrap"><div class="frame"><div class="half"><div class="pane">${pane('out')}</div><div class="cap2">${esc(OL)}</div></div><div class="half"><div class="pane">${pane('in')}</div><div class="cap2">${esc(IL)}</div></div></div>
+<div class="opts">${fixedOut?'':`<h3>${esc(OL)} color</h3><p class="mut">The crochet side: ${esc(OUT[st.o].n)}</p>${sws('o',OUT)}`}${fixedIn?'':`<h3>${esc(IL)} color</h3><p class="mut">The waterproof side: ${esc(IN[st.i].n)}</p>${sws('i',IN)}`}
+<div class="note">Customized bags are made to order after you check out, so there is no stock count.</div><div class="desc">${esc(P.description||'')}</div>
+<div class="acts" style="margin-top:14px"><button class="btn alt" onclick="readyBack()">Back to ready-made bag</button></div></div></div></main>
+<div class="bar"><div class="pp">Price<b>${peso(P.price)}</b></div><div class="qs"><button onclick="qstep(-1)" aria-label="Less">&minus;</button><span id="qn">${qn}</span><button onclick="qstep(1)" aria-label="More">+</button></div><button class="btn" onclick="addCart()">Add to cart</button></div>`;
+}
+function render(){if(mode==='ready'){const m=Math.min(avail(),99);if(qn>m)qn=Math.max(1,m)}
+ document.getElementById('root').innerHTML=mode==='custom'?customHtml():readyHtml()}
+ photos=await loadColorPhotos(P.id);
+ const og=(P.options||[]);const a=og[0]&&og[0].colors&&og[0].colors.length?og[0]:null,b=og[1]&&og[1].colors&&og[1].colors.length?og[1]:null;
+ OUT=a?a.colors:[{n:'Natural',h:'#f2e6d0',id:''}];IN=b?b.colors:[{n:'Standard',h:'#9db39a',id:''}];
+ OL=(og[0]&&og[0].label)||'Outside';IL=(og[1]&&og[1].label)||'Inside';fixedOut=!a;fixedIn=!b;
+ const k=RC().findIndex(c=>colorStock(c)>0);rp=k<0?0:k;
+ render();
+}
 gate(async u=>{
  user=u;const root=document.getElementById('root');
  root.innerHTML=`<header><button class="back" onclick="history.length>1?history.back():location.href='shop.html'" aria-label="Back">${BACK}</button><button class="back" onclick="location.href='shop.html'" aria-label="Home">${HOME}</button><span class="ttl">Details</span>${cartBtn()}</header><main><p class="mut">Loading...</p></main>`;
  initBadge(u.uid);
  p=id?await getProduct(id):null;
  if(!p){document.querySelector('main').innerHTML='<div class="empty"><h2>We could not find that product</h2><p><a href="shop.html">Back to the shop</a></p></div>';return}
- if(p.designer){location.replace('tote.html?id='+encodeURIComponent(p.id));return}
+ if(p.designer){await startBag();return}
  groups=colorGroups(p);pick=groups.map(g=>{const k=g.colors.findIndex(c=>colorStock(c)>0);return k<0?0:k});
  if(groups.length)photos=await loadColorPhotos(p.id);
  const cats=await loadCategories(),cat=cats.find(c=>c.id===p.category);
