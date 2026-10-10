@@ -21,9 +21,8 @@ header .edit{background:none;border:0;color:var(--fg);font:15px system-ui,sans-s
 </style></head>
 <body class="hasbar"><div id="root"></div>
 <script type="module">
-import {gate,getCart,saveCart,loadProducts,loadColorPhotos,esc,peso,shade as sh,BACK,HOME,toast,readyStock,allColors,colorStock} from './app.js';
-const FB_URL=''; /* paste your Facebook Page link between the quotes so Check Out opens your page */
-let user=null,items=[],imgs={},cph={},edit=false,prods={};
+import {gate,getCart,saveCart,loadProducts,loadColorPhotos,esc,peso,shade as sh,BACK,HOME,toast,readyStock,allColors,colorStock,newId,placeOrder,MESSENGER_URL} from './app.js';
+let user=null,items=[],imgs={},cph={},edit=false,prods={},done=null,busy=false;
 const limitOf=x=>{const p=prods[x.pid];if(!p)return Infinity;if(p.designer&&!x.ready)return Infinity;
  const vs=vars(x).filter(v=>v.id);if(!vs.length)return readyStock(p);
  let m=Infinity;vs.forEach(v=>{const c=allColors(p).find(k=>k.id===v.id);if(c)m=Math.min(m,colorStock(c))});return m};
@@ -37,18 +36,34 @@ window.qty=(id,d)=>{const f=find(id);if(d>0){const m=limitOf(f);if(f.q+d>m){toas
 window.del=id=>{items=items.filter(x=>x.id!==id);save();render()};
 window.delSel=()=>{items=items.filter(x=>!x.sel);save();render()};
 window.toggleEdit=()=>{edit=!edit;render()};
-window.chk=()=>{const s=items.filter(x=>x.sel);if(!s.length)return;
- const lines=s.map((x,i)=>`${i+1}. ${x.name}${vars(x).length?` (${vars(x).map(v=>v.g+': '+v.n).join(', ')})`:''} x${x.q} - ${peso(x.price*x.q)}`);
- const msg=`Hi Warm Knots! I'd like to order:\n${lines.join('\n')}\nTotal: ${peso(s.reduce((t,x)=>t+x.price*x.q,0))}\nName: ${user.name} (${user.email})`;
- try{navigator.clipboard.writeText(msg)}catch(e){}
- if(FB_URL)window.open(FB_URL,'_blank');
- toast(FB_URL?'Order details copied. Paste them in our Facebook chat!':'Order details copied. Send them to our Facebook Page to place your order.')};
+const orderText=o=>`Hi Warm Knots! I'd like to order (Order #${o.no}):\n${o.items.map((x,i)=>`${i+1}. ${x.name}${x.variants.length?` (${x.variants.map(v=>v.g+': '+v.n).join(', ')})`:''} x${x.q} - ${peso(x.price*x.q)}`).join('\n')}\nTotal: ${peso(o.total)}\nName: ${o.name} (${o.email})`;
+window.chk=async()=>{
+ const s=items.filter(x=>x.sel);if(!s.length||busy)return;
+ const bad=s.find(x=>limitOf(x)<x.q);
+ if(bad)return toast(limitOf(bad)<=0?'Sorry, "'+bad.name+'" is sold out. Please remove it from your cart.':'Only '+limitOf(bad)+' left of "'+bad.name+'". Please lower the quantity.');
+ busy=true;render();
+ const id=newId(),o={id,no:id.slice(-6).toUpperCase(),uid:user.uid,name:user.name,email:user.email,status:'new',createdAt:Date.now(),
+  total:s.reduce((t,x)=>t+x.price*x.q,0),items:s.map(x=>({pid:x.pid,name:x.name,price:x.price,q:x.q,custom:!!x.custom,variants:vars(x).map(v=>({g:v.g,n:v.n,id:v.id||''}))}))};
+ let saved=true;
+ try{await placeOrder(o)}catch(e){saved=false}
+ if(saved){items=items.filter(x=>!x.sel);try{await saveCart(user.uid,items);setBadge(items.reduce((t,x)=>t+x.q,0))}catch(e){}}
+ busy=false;done={o,saved};render();window.scrollTo(0,0);
+};
+window.openMsg=()=>{const t=orderText(done.o);try{navigator.clipboard.writeText(t).catch(()=>{})}catch(e){}window.open(MESSENGER_URL+'?text='+encodeURIComponent(t),'_blank')};
+window.copyMsg=()=>{try{navigator.clipboard.writeText(orderText(done.o)).then(()=>toast('Order details copied'),()=>toast('Could not copy'))}catch(e){toast('Could not copy')}};
 const row=x=>`<div class="it"><input type="checkbox" ${x.sel?'checked':''} onchange="tog('${x.id}')" aria-label="Select item"><div class="th">${thumb(x)}</div><div class="inf"><div class="nmx">${esc(x.name)}</div><div class="var">${vars(x).map(v=>`<i class="dot" style="background:${v.h}"></i>${esc(v.g)}: ${esc(v.n)}`).join(' &middot; ')}</div>${limitOf(x)<x.q?`<div class="var" style="color:#b3261e">${limitOf(x)<=0?'Sold out':'Only '+limitOf(x)+' left'}</div>`:''}<div class="pq"><span class="pr">${peso(x.price)}</span>${edit?`<button class="dl" onclick="del('${x.id}')">Delete</button>`:`<span class="qt"><button onclick="qty('${x.id}',-1)" aria-label="Less">&minus;</button><span>${x.q}</span><button onclick="qty('${x.id}',1)" aria-label="More">+</button></span>`}</div></div></div>`;
 function render(){
+ if(done){const o=done.o,ok=done.saved;
+  document.getElementById('root').innerHTML=`<header><button class="back" onclick="location.href='shop.html'" aria-label="Home">${HOME}</button><span class="ttl">${ok?'Order placed':'Almost done'}</span></header>
+<main><div class="empty"><h2>${ok?'Thank you! Your order #'+o.no+' is in.':'We could not save your order online'}</h2>
+<p>${ok?'One last step: tap the button below, then press <b>Send</b> in Messenger so we can confirm your payment and delivery.':'Please send it to us on Messenger instead. Your items are still in your cart.'}</p>
+<p style="margin:10px 0"><button class="btn" onclick="openMsg()">Message us on Messenger</button></p>
+<p><button class="lnk" style="background:none;border:0;color:var(--acc);text-decoration:underline;cursor:pointer;font:15px system-ui,sans-serif" onclick="copyMsg()">Copy order details</button></p>
+<p style="margin-top:14px"><button class="btn alt" onclick="${ok?"location.href='shop.html'":"done=null;render()"}">${ok?'Back to the shop':'Back to cart'}</button></p></div></main>`;return}
  const sel=items.filter(x=>x.sel),total=sel.reduce((s,x)=>s+x.price*x.q,0),n=items.reduce((s,x)=>s+x.q,0),selN=sel.reduce((s,x)=>s+x.q,0),all=items.length&&items.every(x=>x.sel);
  document.getElementById('root').innerHTML=`<header><button class="back" onclick="history.length>1?history.back():location.href='shop.html'" aria-label="Back">${BACK}</button>${items.length?`<button class="back" onclick="location.href='shop.html'" aria-label="Home">${HOME}</button>`:''}<span class="ttl">Shopping Cart${n?` (${n})`:''}</span>${items.length?`<button class="edit" onclick="toggleEdit()">${edit?'Done':'Edit'}</button>`:''}</header>
 <main>${items.length?items.map(row).join(''):`<div class="empty"><h2>Your cart is empty</h2><p>Items you add will show up here.</p><button class="btn" onclick="location.href='shop.html'">Start shopping</button></div>`}</main>
-${items.length?`<div class="bar"><label class="all"><input type="checkbox" ${all?'checked':''} onchange="allTog()"> All</label><div class="tot">Total <b>${peso(total)}</b></div><button class="btn" ${sel.length?'':'disabled'} onclick="${edit?'delSel()':'chk()'}">${edit?`Delete (${sel.length})`:`Check Out (${selN})`}</button></div>`:''}`}
+${items.length?`<div class="bar"><label class="all"><input type="checkbox" ${all?'checked':''} onchange="allTog()"> All</label><div class="tot">Total <b>${peso(total)}</b></div><button class="btn" ${sel.length&&!busy?'':'disabled'} onclick="${edit?'delSel()':'chk()'}">${edit?`Delete (${sel.length})`:busy?'Placing order...':`Check Out (${selN})`}</button></div>`:''}`}
 gate(async u=>{
  user=u;document.getElementById('root').innerHTML='<main><p class="mut">Loading your cart...</p></main>';
  try{items=await getCart(u.uid)}catch(e){items=[]}
