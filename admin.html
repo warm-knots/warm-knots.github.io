@@ -58,8 +58,8 @@ textarea{min-height:90px;resize:vertical}
 </style></head>
 <body><div id="root"></div>
 <script type="module">
-import {getLoadError,onUser,signIn,signOutUser,isAdmin,loadProducts,loadCategories,saveProduct,deleteProduct,saveCategory,deleteCategory,isSeeded,seedAll,resizeImage,loadColorPhotos,saveColorPhoto,deleteColorPhoto,deleteAllColorPhotos,newId,esc,peso,toast,BACK,PALETTE,loadLogo,saveLogo,LOGO,readyStock} from './app.js';
-let user=null,cats=[],list=[],tab='products',pf=null,cf=null,loading=true,act={t:'p',gi:0,ci:0},siteLogo='';
+import {getLoadError,onUser,signIn,signOutUser,isAdmin,loadProducts,loadCategories,saveProduct,deleteProduct,saveCategory,deleteCategory,isSeeded,seedAll,resizeImage,loadColorPhotos,saveColorPhoto,deleteColorPhoto,deleteAllColorPhotos,newId,esc,peso,toast,BACK,PALETTE,loadLogo,saveLogo,LOGO,readyStock,loadOrders,saveOrder,deleteOrder,allColors,colorGroups} from './app.js';
+let user=null,cats=[],list=[],tab='products',pf=null,cf=null,loading=true,act={t:'p',gi:0,ci:0},siteLogo='',orders=[],ordersErr='';
 // which category groups are expanded (persists across re-renders in this session)
 let openGroups=new Set();
 const $=id=>document.getElementById(id),root=$('root');
@@ -80,7 +80,7 @@ window.out=()=>signOutUser().then(()=>render());
 window.login=async()=>{try{await signIn()}catch(e){const c=e.code||'';if(c!=='auth/popup-closed-by-user'&&c!=='auth/cancelled-popup-request')toast('Sign-in failed. Please try again.')}};
 async function refresh(){
  try{if(!(await isSeeded()))await seedAll()}catch(e){toast('Could not set up your shop data: '+(e.code||e.message))}
- cats=await loadCategories();list=await loadProducts();siteLogo=await loadLogo();
+ cats=await loadCategories();list=await loadProducts();siteLogo=await loadLogo();try{orders=await loadOrders();ordersErr=''}catch(e){orders=[];ordersErr=e.code||e.message||'error'}
  if(getLoadError())toast('Could not load everything: '+getLoadError());
  if(!pf)pf=newPF();if(!cf)cf=newCF();loading=false;
 }
@@ -303,6 +303,47 @@ function productRow(p){
  return `<div class="pr" data-dtype="prod" data-group="${esc(p.category||'__none')}" data-id="${esc(p.id)}">${HANDLE}<img src="${p.image}" alt=""><div class="t"><b>${esc(p.name)}</b><span>${esc(c?c.name:'No category (hidden)')} · ${peso(p.price)} · ${skt}${n?' · '+n+' color choices':''}${p.designer?' · Customizable':''}</span></div><button class="btn alt sm" onclick="editP('${esc(p.id)}')">Edit</button><button class="btn alt sm dng" onclick="delP('${esc(p.id)}')">Delete</button></div>`;
 }
 
+// ---- orders ----
+const stockTotal=p=>{
+ if(p.designer&&(p.readyColors||[]).length)return p.readyColors.reduce((s,c)=>s+(typeof c.stock==='number'?c.stock:0),0);
+ if(!p.designer){const gs=colorGroups(p);if(gs.length)return Math.min(...gs.map(g=>g.colors.reduce((s,c)=>s+(typeof c.stock==='number'?c.stock:0),0)))}
+ return p.stock};
+async function deductStock(o){
+ const touched=new Map();
+ for(const it of o.items||[]){
+  if(it.custom)continue;
+  const p=list.find(x=>x.id===it.pid);if(!p)continue;
+  let did=false;
+  (it.variants||[]).filter(v=>v.id).forEach(v=>{const c=allColors(p).find(k=>k.id===v.id);if(c&&typeof c.stock==='number'){c.stock=Math.max(0,c.stock-it.q);did=true}});
+  if(!did&&typeof p.stock==='number'&&!(p.readyColors||[]).length&&!colorGroups(p).length){p.stock=Math.max(0,p.stock-it.q);did=true}
+  if(did){p.stock=stockTotal(p);p.soldOut=p.stock<=0;touched.set(p.id,p)}
+ }
+ for(const p of touched.values())await saveProduct(p);
+ return touched.size;
+}
+window.reloadOrders=async()=>{try{orders=await loadOrders();ordersErr=''}catch(e){orders=[];ordersErr=e.code||e.message||'error'}render()};
+window.confirmOrder=async id=>{const o=orders.find(x=>x.id===id);if(!o)return;
+ if(!confirm('Confirm order #'+o.no+'? This lowers the stock of the items ordered.'))return;
+ try{const n=o.stockDeducted?0:await deductStock(o);o.status='confirmed';o.stockDeducted=true;await saveOrder(o);toast('Order confirmed'+(n?' and stock updated':''))}
+ catch(e){toast('Could not update: '+(e.code||e.message))}
+ render()};
+window.doneOrder=async id=>{const o=orders.find(x=>x.id===id);if(!o)return;try{o.status='done';await saveOrder(o);toast('Marked as done')}catch(e){toast('Could not update: '+(e.code||e.message))}render()};
+window.delOrder=async id=>{const o=orders.find(x=>x.id===id);if(!o||!confirm('Delete order #'+o.no+'? This cannot be undone.'))return;
+ try{await deleteOrder(id);orders=orders.filter(x=>x.id!==id);toast('Order deleted')}catch(e){toast('Could not delete: '+(e.code||e.message))}render()};
+const ST={new:'New',confirmed:'Confirmed (stock updated)',done:'Done'};
+function orderCard(o){
+ const d=o.createdAt?new Date(o.createdAt).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'}):'';
+ const lines=(o.items||[]).map(x=>`<div style="margin:4px 0">${esc(x.name)}${(x.variants||[]).length?' <span class="mut">('+x.variants.map(v=>esc(v.g)+': '+esc(v.n)).join(', ')+')</span>':''} &times; ${x.q} &middot; ${peso(x.price*x.q)}</div>`).join('');
+ const acts=o.status==='new'?`<button class="btn sm" onclick="confirmOrder('${esc(o.id)}')">Confirm order</button>`:o.status==='confirmed'?`<button class="btn sm" onclick="doneOrder('${esc(o.id)}')">Mark as done</button>`:'';
+ return `<div class="card"><div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline"><b>Order #${esc(o.no||o.id.slice(-6).toUpperCase())}</b><span class="mut" style="font-size:12px">${esc(d)}</span></div>
+<div class="mut" style="margin:4px 0 8px">${esc(o.name||'')} &middot; ${esc(o.email||'')}</div>${lines}
+<div style="margin-top:8px"><b>Total ${peso(o.total)}</b> <span class="mut">&middot; ${ST[o.status]||esc(o.status||'')}</span></div>
+<div class="acts" style="margin-top:12px">${acts}<button class="btn alt sm dng" onclick="delOrder('${esc(o.id)}')">Delete</button></div></div>`;
+}
+function ordersView(){
+ if(ordersErr)return `<div class="card"><h2>Orders</h2><p class="hint" style="margin-top:0">Orders could not be loaded (${esc(ordersErr)}). Add the Firestore rule for orders (I gave you the text), then press Refresh.</p><div class="acts"><button class="btn alt sm" onclick="reloadOrders()">Refresh</button></div></div>`;
+ return `<div class="card"><h2>Orders (${orders.length})</h2><p class="hint" style="margin-top:0">New orders appear here when customers check out. Confirm an order to lower the stock of what was ordered. Customized bags are made to order, so they never change stock.</p><div class="acts"><button class="btn alt sm" onclick="reloadOrders()">Refresh</button></div></div>${orders.length?orders.map(orderCard).join(''):'<p class="mut">No orders yet.</p>'}`;
+}
 function siteView(){
  return `<div class="card"><h2>Shop logo</h2>
 <p class="hint" style="margin-top:0">This picture appears at the top of the home page and the shop. Use a square image for best results.</p>
@@ -373,6 +414,6 @@ function render(){
  if(!user){root.innerHTML=top()+`<div class="center"><p class="mut">This page is only for the shop owner.</p><button class="btn" onclick="login()">Sign in with Google</button></div>`;return}
  if(!isAdmin(user)){root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+`<div class="center"><h2>Access denied</h2><p class="mut">This page is only for the shop owner. You are signed in as ${esc(user.email)}.</p></div>`;return}
  if(loading){root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+'<main><p class="mut">Loading your shop...</p></main>';return}
- root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+`<main style="padding-bottom:40px"><div class="tabs"><button class="${tab==='products'?'on':''}" onclick="setTab('products')">Products</button><button class="${tab==='cats'?'on':''}" onclick="setTab('cats')">Categories</button><button class="${tab==='site'?'on':''}" onclick="setTab('site')">Site</button></div>${tab==='products'?productsView():tab==='cats'?catsView():siteView()}</main>`;
+ root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+`<main style="padding-bottom:40px"><div class="tabs"><button class="${tab==='products'?'on':''}" onclick="setTab('products')">Products</button><button class="${tab==='cats'?'on':''}" onclick="setTab('cats')">Categories</button><button class="${tab==='orders'?'on':''}" onclick="setTab('orders')">Orders${orders.filter(o=>o.status==='new').length?' ('+orders.filter(o=>o.status==='new').length+')':''}</button><button class="${tab==='site'?'on':''}" onclick="setTab('site')">Site</button></div>${tab==='products'?productsView():tab==='cats'?catsView():tab==='orders'?ordersView():siteView()}</main>`;
 }
 </script></body></html>
