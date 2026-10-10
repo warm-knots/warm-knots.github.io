@@ -119,10 +119,11 @@ ${rc.length?`<div class="opts"><h3>Color</h3><p class="mut">${esc(c.n)}</p>${rc.
 <div class="bar"><div class="pp">Price<b>${peso(P.price)}</b></div><div class="qs"><button onclick="qstep(-1)" aria-label="Less">&minus;</button><span id="qn">${qn}</span><button onclick="qstep(1)" aria-label="More">+</button></div><button class="btn" ${a<=0?'disabled':''} onclick="addReady()">${a<=0?'Sold out':'Add to cart'}</button></div>`;
 }
 function customHtml(){
- return head('Customize your bag')+`<main><div class="wrap"><div class="frame"><div class="half"><div class="pane">${pane('out')}</div><div class="cap2">${esc(OL)}</div></div><div class="half"><div class="pane">${pane('in')}</div><div class="cap2">${esc(IL)}</div></div></div>
+ return head('Customize your bag')+`<main><div class="wrap"><div><div class="frame"><div class="half"><div class="pane">${pane('out')}</div><div class="cap2">${esc(OL)}</div></div><div class="half"><div class="pane">${pane('in')}</div><div class="cap2">${esc(IL)}</div></div></div>
+<div class="note">Customized bags are made to order after you check out, so there is no stock count.</div>
+<div style="margin-top:12px"><button class="btn alt" style="width:100%" onclick="readyBack()">Back to ready-made bag</button></div></div>
 <div class="opts">${fixedOut?'':`<h3>${esc(OL)} color</h3><p class="mut">The crochet side: ${esc(OUT[st.o].n)}</p>${sws('o',OUT)}`}${fixedIn?'':`<h3>${esc(IL)} color</h3><p class="mut">The waterproof side: ${esc(IN[st.i].n)}</p>${sws('i',IN)}`}
-<div class="note">Customized bags are made to order after you check out, so there is no stock count.</div><div class="desc">${esc(P.description||'')}</div>
-<div class="acts" style="margin-top:14px"><button class="btn alt" onclick="readyBack()">Back to ready-made bag</button></div></div></div></main>
+<div class="desc">${esc(P.description||'')}</div></div></div></main>
 <div class="bar"><div class="pp">Price<b>${peso(P.price)}</b></div><div class="qs"><button onclick="qstep(-1)" aria-label="Less">&minus;</button><span id="qn">${qn}</span><button onclick="qstep(1)" aria-label="More">+</button></div><button class="btn" onclick="addCart()">Add to cart</button></div>`;
 }
 function render(){if(mode==='ready'){const m=Math.min(avail(),99);if(qn>m)qn=Math.max(1,m)}
