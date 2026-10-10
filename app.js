@@ -124,6 +124,13 @@ export async function saveLogo(image){
  _logoCache=image;
 }
 
+// ---- orders: saved when a customer checks out; the owner sees them in the Orders tab ----
+export const MESSENGER_URL='https://m.me/61590389826021'; // the shop's Facebook Page chat
+export const saveOrder=o=>setDoc(doc(db,'orders',o.id),JSON.parse(JSON.stringify(o)));
+export const placeOrder=saveOrder;
+export const deleteOrder=id=>deleteDoc(doc(db,'orders',id));
+export async function loadOrders(){return (await getDocs(collection(db,'orders'))).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))}
+
 // ---- carts (saved online under each person's Google account) ----
 export async function getCart(uid){const s=await getDoc(doc(db,'carts',uid));return s.exists()?(s.data().items||[]):[]}
 export const saveCart=(uid,items)=>setDoc(doc(db,'carts',uid),{items:JSON.parse(JSON.stringify(items))});
