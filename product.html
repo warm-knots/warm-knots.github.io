@@ -18,6 +18,7 @@
 .sw{width:38px;height:38px;border-radius:50%;border:1px solid #cdbfae;padding:0;margin:0 8px 8px 0;cursor:pointer}.sw.on{outline:3px solid var(--acc);outline-offset:2px}
 .sw.out{position:relative;opacity:.45}.sw.out::after{content:'';position:absolute;left:50%;top:-2px;bottom:-2px;width:2px;background:#3a2e2a;transform:rotate(45deg)}
 .stock{font:600 14px system-ui,sans-serif;color:#2f6b3a;margin:0 0 10px}.stock.low{color:#b26a00}
+.qs{display:flex;align-items:center;border:1px solid var(--bd);border-radius:999px;overflow:hidden;flex:none}.qs button{width:34px;height:40px;border:0;background:none;font:20px system-ui,sans-serif;color:var(--fg);cursor:pointer}.qs button:disabled{opacity:.35}.qs span{min-width:26px;text-align:center;font:600 15px system-ui,sans-serif}
 .bar .pp{flex:1;font-size:13px;color:var(--mut)}.bar .pp b{display:block;font-size:20px;color:var(--fg)}
 </style></head>
 <body class="hasbar"><div id="root"></div>
@@ -30,18 +31,21 @@ const view=()=>{const hp=groups.map((g,gi)=>gi).filter(gi=>groups[gi].colors.som
  const img=gi=>photos[groups[gi].colors[pick[gi]].id]||p.image;
  if(hp.length>=2)return `<div class="frame">${hp.slice(0,2).map(gi=>`<div class="half"><div class="pane"><img class="big" src="${img(gi)}" alt="${esc(groups[gi].label||'')}"></div><div class="cap2">${esc(groups[gi].label||'Color')}: ${esc(groups[gi].colors[pick[gi]].n)}</div></div>`).join('')}</div>`;
  return `<div class="frame"><div class="half"><div class="pane"><img class="big" src="${hp.length?img(hp[0]):p.image}" alt="${esc(p.name)}"></div></div></div>`};
+let qn=1;
+const qmax=()=>Math.min(avail(),99);
+window.qstep=d=>{qn=Math.max(1,Math.min(qmax(),qn+d));document.getElementById('qn').textContent=qn};
 const avail=()=>groups.length?Math.min(...groups.map((g,gi)=>colorStock(g.colors[pick[gi]]))):readyStock(p);
 const stockHtml=()=>{const a=avail();return a<=0?'<span class="sold">Sold out</span>':(a===Infinity?'':`<div class="stock ${a<=3?'low':''}">In stock: ${a}</div>`)};
-const refresh=()=>{const a=avail(),b=document.getElementById('addb');document.getElementById('stk').innerHTML=stockHtml();if(b){b.disabled=a<=0;b.textContent=a<=0?'Sold out':'Add to cart'}};
+const refresh=()=>{const a=avail(),b=document.getElementById('addb');if(qn>Math.min(a,99))qn=Math.max(1,Math.min(a,99));document.getElementById('qn').textContent=qn;document.getElementById('stk').innerHTML=stockHtml();if(b){b.disabled=a<=0;b.textContent=a<=0?'Sold out':'Add to cart'}};
 window.choose=(gi,ci)=>{pick[gi]=ci;document.getElementById('opts').innerHTML=swatches();document.getElementById('view').innerHTML=view();refresh()};
 window.addCart=async()=>{
  const a=avail();if(a<=0)return toast('Sold out');
  const variants=groups.map((g,gi)=>({g:g.label||'Color',n:g.colors[pick[gi]].n,h:g.colors[pick[gi]].h,id:g.colors[pick[gi]].id||''}));
  const cid='p-'+p.id+variants.map(v=>'-'+v.n).join('');
  try{const c=await getCart(user.uid),f=c.find(x=>x.id===cid);
-  if(f&&f.q+1>a)return toast('Only '+a+' in stock, and you already have '+f.q+' in your cart');
-  f?f.q++:c.push({id:cid,pid:p.id,name:p.name,price:p.price,q:1,sel:true,variants});
-  await saveCart(user.uid,c);setBadge(cartTotalQty(c));toast('Added to your cart')}
+  const have=f?f.q:0;if(have+qn>a)return toast(have?'Only '+a+' in stock, and you already have '+have+' in your cart':'Only '+a+' in stock');
+  f?f.q+=qn:c.push({id:cid,pid:p.id,name:p.name,price:p.price,q:qn,sel:true,variants});
+  await saveCart(user.uid,c);setBadge(cartTotalQty(c));qn=1;document.getElementById('qn').textContent=1;toast('Added to your cart')}
  catch(e){toast('Could not add to cart. Please try again.')}
 };
 gate(async u=>{
@@ -55,6 +59,6 @@ gate(async u=>{
  if(groups.length)photos=await loadColorPhotos(p.id);
  const cats=await loadCategories(),cat=cats.find(c=>c.id===p.category);
  document.querySelector('main').innerHTML=`<div class="pw"><div id="view">${view()}</div><div class="info"><h2>${esc(p.name)}</h2><div class="price">${peso(p.price)}</div><div class="mut">${esc(cat?cat.name:'')}</div><div id="stk" style="margin-top:8px">${stockHtml()}</div><div id="opts">${swatches()}</div><div class="desc">${esc(p.description||'')}</div></div></div>`;
- root.insertAdjacentHTML('beforeend',`<div class="bar"><div class="pp">Price<b>${peso(p.price)}</b></div><button class="btn" id="addb" ${avail()<=0?'disabled':''} onclick="addCart()">${avail()<=0?'Sold out':'Add to cart'}</button></div>`);
+ root.insertAdjacentHTML('beforeend',`<div class="bar"><div class="pp">Price<b>${peso(p.price)}</b></div><div class="qs"><button onclick="qstep(-1)" aria-label="Less">&minus;</button><span id="qn">${qn}</span><button onclick="qstep(1)" aria-label="More">+</button></div><button class="btn" id="addb" ${avail()<=0?'disabled':''} onclick="addCart()">${avail()<=0?'Sold out':'Add to cart'}</button></div>`);
 });
 </script></body></html>
