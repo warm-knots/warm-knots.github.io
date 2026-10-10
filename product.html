@@ -41,6 +41,9 @@ body.bag .note{font:13px system-ui,sans-serif;color:var(--mut);margin-top:10px}
 body.bag .qs{display:flex;align-items:center;border:1px solid var(--bd);border-radius:999px;overflow:hidden;flex:none}body.bag .qs button{width:34px;height:40px;border:0;background:none;font:20px system-ui,sans-serif;color:var(--fg);cursor:pointer}body.bag .qs button:disabled{opacity:.35}body.bag .qs span{min-width:26px;text-align:center;font:600 15px system-ui,sans-serif}
 body.bag .pane{flex:none;aspect-ratio:1/1;min-height:0;overflow:hidden}
 body.bag .pane img{width:100%;height:100%;object-fit:contain;display:block}
+/* every picture box is the same size: one box = one half of the Customize view */
+.frame.one{width:calc(50% - 1.5px);margin:0 auto}
+@media(min-width:720px){body.bag .wrap{grid-template-columns:1fr 1fr}}
 </style></head>
 <body class="hasbar"><div id="root"></div>
 <script type="module">
@@ -51,7 +54,7 @@ const swatches=()=>groups.map((g,gi)=>`<div class="opt"><h3>${esc(g.label||'Colo
 const view=()=>{const hp=groups.map((g,gi)=>gi).filter(gi=>groups[gi].colors.some(c=>photos[c.id]));
  const img=gi=>photos[groups[gi].colors[pick[gi]].id]||p.image;
  if(hp.length>=2)return `<div class="frame">${hp.slice(0,2).map(gi=>`<div class="half"><div class="pane"><img class="big" src="${img(gi)}" alt="${esc(groups[gi].label||'')}"></div><div class="cap2">${esc(groups[gi].label||'Color')}: ${esc(groups[gi].colors[pick[gi]].n)}</div></div>`).join('')}</div>`;
- return `<div class="frame"><div class="half"><div class="pane"><img class="big" src="${hp.length?img(hp[0]):p.image}" alt="${esc(p.name)}"></div></div></div>`};
+ return `<div class="frame one"><div class="half"><div class="pane"><img class="big" src="${hp.length?img(hp[0]):p.image}" alt="${esc(p.name)}"></div></div></div>`};
 let qn=1;
 const qmax=()=>Math.min(avail(),99);
 window.qstep=d=>{qn=Math.max(1,Math.min(qmax(),qn+d));document.getElementById('qn').textContent=qn};
@@ -110,7 +113,7 @@ window.addCart=()=>{
 const head=t=>`<header><button class="back" onclick="goBack()" aria-label="Back">${BACK}</button><button class="back" onclick="location.href='shop.html'" aria-label="Home">${HOME}</button><span class="ttl">${esc(t)}</span>${cartBtn()}</header>`;
 function readyHtml(){
  const rc=RC(),c=rc[rp],img=(c&&photos[c.id])||P.image,a=avail();
- return head(P.name)+`<main><div class="wrap"><div><div class="frame"><div class="half"><div class="pane"><img src="${img}" alt="${esc(P.name)}"></div></div></div>
+ return head(P.name)+`<main><div class="wrap"><div><div class="frame one"><div class="half"><div class="pane"><img src="${img}" alt="${esc(P.name)}"></div></div></div>
 <div class="note">Want your own color combination? Tap Customize to pick the outside and inside colors. Customized bags are made to order.</div>
 <div style="margin-top:12px"><button class="btn alt" style="width:100%" onclick="customize()">Customize</button></div></div>
 <div class="info"><h2>${esc(P.name)}</h2><div class="price">${peso(P.price)}</div>${stockHtml()}
