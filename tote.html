@@ -23,13 +23,13 @@
 .stock{font:600 14px system-ui,sans-serif;color:#2f6b3a;margin:0 0 10px}.stock.low{color:#b26a00}
 .sold{display:inline-block;background:#3a2e2a;color:#fff;font:600 12px system-ui,sans-serif;border-radius:999px;padding:3px 12px;margin-bottom:10px}
 .note{font:13px system-ui,sans-serif;color:var(--mut);margin-top:10px}
-.bar .btn.alt{padding:11px 16px}
+.qs{display:flex;align-items:center;border:1px solid var(--bd);border-radius:999px;overflow:hidden;flex:none}.qs button{width:34px;height:40px;border:0;background:none;font:20px system-ui,sans-serif;color:var(--fg);cursor:pointer}.qs button:disabled{opacity:.35}.qs span{min-width:26px;text-align:center;font:600 15px system-ui,sans-serif}
 </style></head>
 <body class="hasbar"><div id="root"></div>
 <script type="module">
 import {gate,getProduct,loadColorPhotos,getCart,saveCart,setBadge,cartTotalQty,cartBtn,initBadge,shade as sh,esc,peso,BACK,toast,readyStock,colorStock} from './app.js';
 const TID=new URLSearchParams(location.search).get('id')||'tote';
-let user=null,P=null,OUT=[],IN=[],OL='Outside',IL='Inside',fixedOut=false,fixedIn=false,photos={},mode='ready',rp=0;
+let qn=1,user=null,P=null,OUT=[],IN=[],OL='Outside',IL='Inside',fixedOut=false,fixedIn=false,photos={},mode='ready',rp=0;
 const st={o:0,i:0};
 function bag(side,b){const o=side==='out',s=sh(b,.2),body='M28 80H172L162 204Q161 210 155 210H45Q39 210 38 204Z';
  return `<svg viewBox="0 0 200 220" role="img" aria-label="${o?'Crochet outside':'Waterproof inside'} of the tote bag"><defs><pattern id="pp-${side}" width="10" height="8" patternUnits="userSpaceOnUse"><rect width="10" height="8" fill="${b}"/><path d="M1 1L5 7L9 1" fill="none" stroke="${s}" stroke-width="1.3"/></pattern></defs>
@@ -43,14 +43,17 @@ const RC=()=>P.readyColors||[];
 const avail=()=>{const rc=RC();return rc.length?colorStock(rc[rp]):readyStock(P)};
 const stockHtml=()=>{const a=avail();return a<=0?'<span class="sold">Sold out</span>':(a===Infinity?'':`<div class="stock ${a<=3?'low':''}">In stock: ${a}</div>`)};
 window.pickReady=i=>{rp=i;render()};
-window.customize=()=>{mode='custom';render();window.scrollTo(0,0)};
-window.readyBack=()=>{mode='ready';render();window.scrollTo(0,0)};
+const qmax=()=>mode==='ready'?Math.min(avail(),99):99;
+window.qstep=d=>{qn=Math.max(1,Math.min(qmax(),qn+d));document.getElementById('qn').textContent=qn};
+window.customize=()=>{mode='custom';qn=1;render();window.scrollTo(0,0)};
+window.readyBack=()=>{mode='ready';qn=1;render();window.scrollTo(0,0)};
 window.goBack=()=>{if(mode==='custom')readyBack();else location.href=P&&P.category?'category.html?c='+encodeURIComponent(P.category):'shop.html'};
 async function put(item){
  try{const c=await getCart(user.uid),f=c.find(x=>x.id===item.id);
-  if(item.ready){const a=avail();if(f&&f.q+1>a){toast('Only '+a+' in stock, and you already have '+f.q+' in your cart');return}}
-  f?f.q++:c.push(item);
-  await saveCart(user.uid,c);setBadge(cartTotalQty(c));toast('Added to your cart')}
+  item.q=qn;
+  if(item.ready){const a=avail(),have=f?f.q:0;if(have+qn>a){toast(have?'Only '+a+' in stock, and you already have '+have+' in your cart':'Only '+a+' in stock');return}}
+  f?f.q+=qn:c.push(item);
+  await saveCart(user.uid,c);setBadge(cartTotalQty(c));qn=1;const q=document.getElementById('qn');if(q)q.textContent=1;toast('Added to your cart')}
  catch(e){toast('Could not add to cart. Please try again.')}
 }
 window.addReady=()=>{
@@ -69,18 +72,19 @@ function readyHtml(){
 <div class="info"><h2>${esc(P.name)}</h2><div class="price">${peso(P.price)}</div>${stockHtml()}
 ${rc.length?`<div class="opts"><h3>Color</h3><p class="mut">${esc(c.n)}</p>${rc.map((k,i)=>`<button class="sw ${rp===i?'on':''} ${colorStock(k)<=0?'out':''}" style="background:${k.h}" aria-label="${esc(k.n)}" onclick="pickReady(${i})"></button>`).join('')}</div>`:''}
 <div class="desc">${esc(P.description||'')}</div>
-<div class="note">Want your own color combination? Tap Customize to pick the outside and inside colors. Customized bags are made to order.</div></div></div></main>
-<div class="bar"><div class="pp">Price<b>${peso(P.price)}</b></div><button class="btn alt" onclick="customize()">Customize</button><button class="btn" ${a<=0?'disabled':''} onclick="addReady()">${a<=0?'Sold out':'Add to cart'}</button></div>`;
+<div class="note">Want your own color combination? Tap Customize to pick the outside and inside colors. Customized bags are made to order.</div>
+<div style="margin-top:12px"><button class="btn alt" onclick="customize()">Customize</button></div></div></div></main>
+<div class="bar"><div class="pp">Price<b>${peso(P.price)}</b></div><div class="qs"><button onclick="qstep(-1)" aria-label="Less">&minus;</button><span id="qn">${qn}</span><button onclick="qstep(1)" aria-label="More">+</button></div><button class="btn" ${a<=0?'disabled':''} onclick="addReady()">${a<=0?'Sold out':'Add to cart'}</button></div>`;
 }
 function customHtml(){
  return head('Customize your bag')+`<main><div class="wrap"><div class="frame"><div class="half"><div class="pane">${pane('out')}</div><div class="cap2">${esc(OL)}</div></div><div class="half"><div class="pane">${pane('in')}</div><div class="cap2">${esc(IL)}</div></div></div>
 <div class="opts">${fixedOut?'':`<h3>${esc(OL)} color</h3><p class="mut">The crochet side: ${esc(OUT[st.o].n)}</p>${sws('o',OUT)}`}${fixedIn?'':`<h3>${esc(IL)} color</h3><p class="mut">The waterproof side: ${esc(IN[st.i].n)}</p>${sws('i',IN)}`}
-<div class="sum"><b>Your design</b><br>${esc(OUT[st.o].n)} crochet ${esc(OL.toLowerCase())}, ${esc(IN[st.i].n)} waterproof ${esc(IL.toLowerCase())}</div>
 <div class="note">Customized bags are made to order after you check out, so there is no stock count.</div><div class="desc">${esc(P.description||'')}</div>
 <div class="acts" style="margin-top:14px"><button class="btn alt" onclick="readyBack()">Back to ready-made bag</button></div></div></div></main>
-<div class="bar"><div class="pp">Price<b>${peso(P.price)}</b></div><button class="btn" onclick="addCart()">Add to cart</button></div>`;
+<div class="bar"><div class="pp">Price<b>${peso(P.price)}</b></div><div class="qs"><button onclick="qstep(-1)" aria-label="Less">&minus;</button><span id="qn">${qn}</span><button onclick="qstep(1)" aria-label="More">+</button></div><button class="btn" onclick="addCart()">Add to cart</button></div>`;
 }
-function render(){document.getElementById('root').innerHTML=mode==='custom'?customHtml():readyHtml()}
+function render(){if(mode==='ready'){const m=Math.min(avail(),99);if(qn>m)qn=Math.max(1,m)}
+ document.getElementById('root').innerHTML=mode==='custom'?customHtml():readyHtml()}
 gate(async u=>{
  user=u;
  document.getElementById('root').innerHTML=head('Loading...')+'<main><p class="mut">Loading...</p></main>';
