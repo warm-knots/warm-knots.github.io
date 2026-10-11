@@ -129,6 +129,7 @@ export const MESSENGER_URL='https://m.me/61587551665515'; // the shop's Facebook
 export const saveOrder=o=>setDoc(doc(db,'orders',o.id),JSON.parse(JSON.stringify(o)));
 export const placeOrder=saveOrder;
 export async function loadMyOrders(uid){return (await getDocs(query(collection(db,'orders'),where('uid','==',uid)))).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))}
+export const cancelMyOrder=id=>setDoc(doc(db,'orders',id),{status:'cancelled'},{merge:true}); // customers can only do this while the order is still New (Firestore rules enforce it)
 export const deleteOrder=id=>deleteDoc(doc(db,'orders',id));
 export async function loadOrders(){return (await getDocs(collection(db,'orders'))).docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0))}
 
