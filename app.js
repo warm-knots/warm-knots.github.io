@@ -125,7 +125,7 @@ export async function saveLogo(image){
 }
 
 // ---- orders: saved when a customer checks out; the owner sees them in the Orders tab ----
-export const MESSENGER_URL='https://m.me/61590389826021'; // the shop's Facebook Page chat
+export const MESSENGER_URL='https://m.me/61587551665515'; // the shop's Facebook Page chat
 export const saveOrder=o=>setDoc(doc(db,'orders',o.id),JSON.parse(JSON.stringify(o)));
 export const placeOrder=saveOrder;
 export const deleteOrder=id=>deleteDoc(doc(db,'orders',id));
