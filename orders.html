@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="color-scheme" content="only light">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>My Orders | Warm Knots</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>
+.oc{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin-bottom:14px;font-family:system-ui,sans-serif}
+.oh{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.oh b{font:600 16px Georgia,serif}
+.li{margin:6px 0;font-size:14px}.li .v{color:var(--mut);font-size:12px}
+.chip{display:inline-block;border-radius:999px;padding:3px 12px;font:600 12px system-ui,sans-serif;background:#f3ebdf;color:#3a2e2a}
+.chip.new{background:#fff3d6;color:#8a5a00}.chip.confirmed{background:#dff0e0;color:#2f6b3a}.chip.done{background:#e3e8f5;color:#31456e}.chip.cancelled{background:#f4dcdc;color:#9a2b2b}
+.st{font-size:14px;margin:10px 0 0}.help{margin-top:12px}.help a{display:inline-block;text-decoration:none}
+</style></head><body><div id="root"></div>
+<script type="module">
+import {gate,loadMyOrders,cartBtn,initBadge,esc,peso,BACK,HOME,MESSENGER_URL} from './app.js';
+const TXT={new:'Order received. We will confirm it with you on Messenger.',confirmed:'Confirmed. We are getting your order ready.',done:'Completed. Thank you for shopping with us!',cancelled:'This order was cancelled. Message us if you have questions.'};
+const LBL={new:'Received',confirmed:'Confirmed',done:'Completed',cancelled:'Cancelled'};
+const help=o=>MESSENGER_URL+'?text='+encodeURIComponent('Hi Warm Knots! I need help with my order'+(o?' #'+o.no:'')+'.');
+const head=`<header><button class="back" onclick="location.href='shop.html'" aria-label="Back">${BACK}</button><button class="back" onclick="location.href='shop.html'" aria-label="Home">${HOME}</button><span class="ttl">My orders</span>${cartBtn()}</header>`;
+const card=o=>{const d=o.createdAt?new Date(o.createdAt).toLocaleString('en-PH',{dateStyle:'medium',timeStyle:'short'}):'';const s=TXT[o.status]?o.status:'new';
+ return `<div class="oc"><div class="oh"><b>Order #${esc(o.no||o.id.slice(-6).toUpperCase())}</b><span class="chip ${s}">${LBL[s]}</span></div><div class="mut" style="margin:4px 0 8px">${esc(d)}</div>
+${(o.items||[]).map(x=>`<div class="li">${esc(x.name)} &times; ${x.q} &middot; ${peso(x.price*x.q)}${(x.variants||[]).length?`<div class="v">${x.variants.map(v=>esc(v.g)+': '+esc(v.n)).join(', ')}</div>`:''}</div>`).join('')}
+<div style="margin-top:8px"><b>Total ${peso(o.total)}</b></div><p class="st">${TXT[s]}</p>
+<div class="help"><a class="btn alt" style="padding:8px 16px;font-size:14px" target="_blank" rel="noopener" href="${help(o)}">Need help? Message us</a></div></div>`};
+gate(async u=>{
+ const root=document.getElementById('root');
+ root.innerHTML=head+'<main><p class="mut">Loading...</p></main>';initBadge(u.uid);
+ let list=[],err='';
+ try{list=await loadMyOrders(u.uid)}catch(e){err=e.code||e.message||'error'}
+ root.innerHTML=head+`<main><h1>My orders</h1><p class="sub">Follow your orders here. If anything goes wrong, message us on our Facebook page.</p>${err?`<div class="empty"><h2>We could not load your orders</h2><p>Please try again in a moment (${esc(err)}).</p></div>`:list.length?list.map(card).join(''):'<div class="empty"><h2>No orders yet</h2><p>When you check out, your order shows up here.</p><p style="margin-top:14px"><button class="btn" onclick="location.href=\'shop.html\'">Go to the shop</button></p></div>'}
+<p style="text-align:center;margin-top:20px"><a class="btn alt" style="text-decoration:none" target="_blank" rel="noopener" href="${help()}">Message us on Messenger</a></p></main>`;
+ initBadge(u.uid);
+});
+</script></body></html>
