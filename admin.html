@@ -12,6 +12,7 @@
 label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
 input[type=text],input[type=number],select,textarea{width:100%;box-sizing:border-box;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif}
 textarea{min-height:90px;resize:vertical}
+#f_d{overflow:hidden;resize:none}
 .chk{display:flex;align-items:center;gap:8px;margin-top:14px;font-size:15px;color:var(--fg)}.chk input{width:18px;height:18px;accent-color:var(--acc)}
 .acts{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
 .tabs{display:flex;margin-bottom:18px}.tabs button{flex:1;border:1px solid var(--bd);background:#fff;color:var(--fg);padding:10px 0;font:600 15px system-ui,sans-serif;cursor:pointer}
@@ -392,7 +393,7 @@ const stockBox=`<label>Stock (how many you have; it shows as Sold out at 0)</lab
 <label>Name</label><input type="text" id="f_n" value="${esc(pf.name)}" placeholder="e.g. Bear keychain">
 <label>Category</label><select id="f_c" onchange="sync();render()">${pf.category&&cats.some(c=>c.id===pf.category)?'':'<option value="">Choose a category</option>'}${cats.map(c=>`<option value="${esc(c.id)}" ${pf.category===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}</select>
 <label>Price (pesos)</label><input type="number" id="f_p" min="0" step="1" inputmode="numeric" value="${esc(pf.price)}" placeholder="e.g. 120">
-<label>Description and other details</label><textarea id="f_d" placeholder="Size, materials, care...">${esc(pf.description)}</textarea>
+<label>Description and other details</label><textarea id="f_d" oninput="growDesc()" placeholder="Size, materials, care...">${esc(pf.description)}</textarea>
 ${stockUI}
 <div class="acts"><button class="btn" id="sv" onclick="saveP()">${pf.id?'Save changes':'Add product'}</button>${pf.id?'<button class="btn alt" onclick="cancelP()">Cancel</button>':''}</div></div>
 <div class="card"><h2>Your products (${list.length})</h2>
@@ -409,11 +410,14 @@ function catsView(){
 ${cats.map(c=>`<div class="pr" data-dtype="cat" data-id="${esc(c.id)}">${HANDLE}${c.image?`<img src="${c.image}" alt="">`:'<div class="ph"></div>'}<div class="t"><b>${esc(c.name)}</b><span>${list.filter(p=>p.category===c.id).length} products</span></div><button class="btn alt sm" onclick="editC('${esc(c.id)}')">Edit</button><button class="btn alt sm dng" onclick="delC('${esc(c.id)}')">Delete</button></div>`).join('')||'<p class="mut">No categories yet.</p>'}</div>`;
 }
 window.sync=sync;window.render=()=>render();
+window.growDesc=()=>{const d=document.getElementById('f_d');if(d){d.style.height='auto';d.style.height=(d.scrollHeight+2)+'px'}};
+window.addEventListener('resize',()=>growDesc());
 function render(){
  const top=right=>`<header><button class="back" onclick="location.href='shop.html'" aria-label="Back to shop">${BACK}</button><span class="ttl">Owner panel</span>${right||''}</header>`;
  if(!user){root.innerHTML=top()+`<div class="center"><p class="mut">This page is only for the shop owner.</p><button class="btn" onclick="login()">Sign in with Google</button></div>`;return}
  if(!isAdmin(user)){root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+`<div class="center"><h2>Access denied</h2><p class="mut">This page is only for the shop owner. You are signed in as ${esc(user.email)}.</p></div>`;return}
  if(loading){root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+'<main><p class="mut">Loading your shop...</p></main>';return}
  root.innerHTML=top('<button class="lnk" onclick="out()">Sign out</button>')+`<main style="padding-bottom:40px"><div class="tabs"><button class="${tab==='products'?'on':''}" onclick="setTab('products')">Products</button><button class="${tab==='cats'?'on':''}" onclick="setTab('cats')">Categories</button><button class="${tab==='orders'?'on':''}" onclick="setTab('orders')">Orders${orders.filter(o=>o.status==='new').length?' ('+orders.filter(o=>o.status==='new').length+')':''}</button><button class="${tab==='site'?'on':''}" onclick="setTab('site')">Site</button></div>${tab==='products'?productsView():tab==='cats'?catsView():tab==='orders'?ordersView():siteView()}</main>`;
+ growDesc();
 }
 </script></body></html>
