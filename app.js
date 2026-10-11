@@ -142,3 +142,22 @@ export function resizeImage(file,max=800,q=.78){return new Promise((res,rej)=>{c
   const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(img,0,0,c.width,c.height);
   let out=c.toDataURL('image/jpeg',q),qq=q;while(out.length>700000&&qq>.4){qq-=.1;out=c.toDataURL('image/jpeg',qq)}res(out)};
  img.src=URL.createObjectURL(file)})}
+
+// ---- Facebook / Messenger / Instagram open links in their own in-app browser. Google sign-in does not work there,
+// so we offer to open the page in Chrome (tries once automatically, plus an "Open in Chrome" bar as a backup). ----
+(function(){
+ const ua=navigator.userAgent||'';
+ if(!/FBAN|FBAV|FB_IAB|FBIOS|Messenger|Instagram/i.test(ua))return;
+ const android=/Android/i.test(ua),ios=/iPhone|iPad|iPod/i.test(ua);
+ if(!android&&!ios)return;
+ const rest=location.host+location.pathname+location.search+location.hash;
+ const url=android?'intent://'+rest+'#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(location.href)+';end':'googlechromes://'+rest;
+ try{if(!sessionStorage.getItem('chromeTried')){sessionStorage.setItem('chromeTried','1');location.href=url}}catch(e){}
+ const show=()=>{
+  const b=document.createElement('div');b.id='chromebar';
+  b.style.cssText='position:relative;z-index:9999;display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff3d6;color:#3a2e2a;font:14px system-ui,sans-serif;border-bottom:1px solid #e8d4a2';
+  b.innerHTML='<span style="flex:1">For the best experience (and to sign in), open this page in Chrome.</span><a href="'+url.replace(/"/g,'&quot;')+'" style="background:#c8553d;color:#fff;text-decoration:none;font-weight:600;padding:8px 12px;border-radius:999px;white-space:nowrap">Open in Chrome</a>';
+  document.body.insertBefore(b,document.body.firstChild);
+ };
+ if(document.body)show();else document.addEventListener('DOMContentLoaded',show);
+})();
